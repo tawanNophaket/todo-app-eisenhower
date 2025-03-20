@@ -9,9 +9,11 @@ interface TodoItemProps {
   dueDate?: string;
   reminderDate?: string;
   quadrant?: number;
+  categories: string[];
+  tags: string[];
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
-  onEdit: (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string) => void;
+  onEdit: (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[]) => void;
 }
 
 export default function TodoItem({ 
@@ -22,7 +24,9 @@ export default function TodoItem({
   urgency, 
   dueDate,
   reminderDate,
-  quadrant = 0, 
+  quadrant = 0,
+  categories = [],
+  tags = [],
   onToggle, 
   onDelete, 
   onEdit 
@@ -33,11 +37,22 @@ export default function TodoItem({
   const [editedUrgency, setEditedUrgency] = useState<'high' | 'low'>(urgency);
   const [editedDueDate, setEditedDueDate] = useState<string | undefined>(dueDate);
   const [editedReminderDate, setEditedReminderDate] = useState<string | undefined>(reminderDate);
+  const [editedCategories, setEditedCategories] = useState<string[]>(categories);
+  const [editedTags, setEditedTags] = useState<string[]>(tags);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = () => {
     if (editedText.trim() === '') return;
-    onEdit(id, editedText, editedImportance, editedUrgency, editedDueDate, editedReminderDate);
+    onEdit(
+      id, 
+      editedText, 
+      editedImportance, 
+      editedUrgency, 
+      editedDueDate, 
+      editedReminderDate,
+      editedCategories,
+      editedTags
+    );
     setIsEditing(false);
   };
 
@@ -123,6 +138,24 @@ export default function TodoItem({
     }
   };
 
+  // จัดการกับการเพิ่ม/ลบหมวดหมู่
+  const toggleCategory = (category: string) => {
+    if (editedCategories.includes(category)) {
+      setEditedCategories(editedCategories.filter(c => c !== category));
+    } else {
+      setEditedCategories([...editedCategories, category]);
+    }
+  };
+
+  // จัดการกับการเพิ่ม/ลบแท็ก
+  const toggleTag = (tag: string) => {
+    if (editedTags.includes(tag)) {
+      setEditedTags(editedTags.filter(t => t !== tag));
+    } else {
+      setEditedTags([...editedTags, tag]);
+    }
+  };
+
   return (
     <div 
       id={`todo-${id}`}
@@ -160,55 +193,76 @@ export default function TodoItem({
             </div>
           </div>
           
-          <div className="flex flex-wrap justify-between items-center gap-2 mt-2">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-1">
-                <span className="text-xs font-medium text-gray-400">สำคัญ:</span>
+          <div className="bg-[#121212] border border-[#2d2d2d] p-3 rounded-lg">
+            <div className="text-sm font-medium text-gray-300 mb-2">หมวดหมู่:</div>
+            <div className="flex flex-wrap gap-2">
+              {['งานส่วนตัว', 'งานบ้าน', 'การเรียน', 'งานอื่นๆ'].map(category => (
                 <button
-                  onClick={() => setEditedImportance('high')}
-                  className={`px-2 py-0.5 text-xs rounded-full ${editedImportance === 'high' ? 'bg-[#ff6100] text-white' : 'bg-[#2d2d2d] text-gray-300'}`}
+                  key={category}
+                  onClick={() => toggleCategory(category)}
+                  className={`px-2 py-1 text-xs rounded-full ${
+                    editedCategories.includes(category) 
+                      ? 'bg-[#ff6100] text-white' 
+                      : 'bg-[#2d2d2d] text-gray-300'
+                  }`}
                 >
-                  ใช่
+                  {category}
                 </button>
-                <button
-                  onClick={() => setEditedImportance('low')}
-                  className={`px-2 py-0.5 text-xs rounded-full ${editedImportance === 'low' ? 'bg-[#ff6100] text-white' : 'bg-[#2d2d2d] text-gray-300'}`}
-                >
-                  ไม่
-                </button>
-              </div>
-              
-              <div className="flex items-center space-x-1">
-                <span className="text-xs font-medium text-gray-400">เร่งด่วน:</span>
-                <button
-                  onClick={() => setEditedUrgency('high')}
-                  className={`px-2 py-0.5 text-xs rounded-full ${editedUrgency === 'high' ? 'bg-[#ff6100] text-white' : 'bg-[#2d2d2d] text-gray-300'}`}
-                >
-                  ใช่
-                </button>
-                <button
-                  onClick={() => setEditedUrgency('low')}
-                  className={`px-2 py-0.5 text-xs rounded-full ${editedUrgency === 'low' ? 'bg-[#ff6100] text-white' : 'bg-[#2d2d2d] text-gray-300'}`}
-                >
-                  ไม่
-                </button>
-              </div>
+              ))}
             </div>
+          </div>
+          
+          <div className="bg-[#121212] border border-[#2d2d2d] p-3 rounded-lg">
+            <div className="text-sm font-medium text-gray-300 mb-2">แท็ก:</div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {editedTags.map(tag => {
+                if (typeof tag !== 'string') {
+                  return null;
+                }
+                return (
+                  <div 
+                    key={typeof tag === 'string' ? tag : `tag-${Math.random()}`}
+                    className="bg-[#2d2d2d] px-2 py-1 text-xs rounded-full flex items-center"
+                  >
+                    #{typeof tag === 'string' ? tag : ''}
+                    <button 
+                      onClick={() => toggleTag(tag)} 
+                      className="ml-1 text-gray-400 hover:text-white"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex">
+              <input
+                type="text"
+                placeholder="เพิ่มแท็กใหม่..."
+                className="flex-1 p-1.5 bg-[#2d2d2d] text-white text-xs rounded-lg border border-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#ff6100]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value.trim() !== '') {
+                    toggleTag(e.currentTarget.value.trim());
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+            </div>
+          </div>
             
-            <div className="flex space-x-2">
-              <button
-                onClick={handleEdit}
-                className="px-3 py-1.5 text-white bg-[#ff6100] rounded hover:bg-[#ff884d] font-medium text-sm transition-colors duration-200"
-              >
-                บันทึก
-              </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-3 py-1.5 text-white bg-[#2d2d2d] rounded hover:bg-[#3d3d3d] text-sm transition-colors duration-200"
-              >
-                ยกเลิก
-              </button>
-            </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleEdit}
+              className="px-3 py-1.5 text-white bg-[#ff6100] rounded hover:bg-[#ff884d] font-medium text-sm transition-colors duration-200"
+            >
+              บันทึก
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="px-3 py-1.5 text-white bg-[#2d2d2d] rounded hover:bg-[#3d3d3d] text-sm transition-colors duration-200"
+            >
+              ยกเลิก
+            </button>
           </div>
         </div>
       ) : (
@@ -223,33 +277,66 @@ export default function TodoItem({
                   className="w-5 h-5 cursor-pointer"
                 />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center mb-1">
-                  <span className="text-xs mr-1.5 text-gray-400">{getQuadrantIcon()}</span>
-                  <span className={`text-base ${completed ? 'line-through text-gray-400' : 'text-white'} break-words`}>
-                    {text}
-                  </span>
+              
+              <div className="flex-1">
+                <div className={`text-white ${completed ? 'line-through text-gray-400' : ''} break-words`}>
+                  {getQuadrantIcon()} {text}
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-1 text-xs">
-                  <span className={`px-1.5 py-0.5 rounded-full ${importance === 'high' ? 'bg-red-900 text-red-200' : 'bg-green-900 text-green-200'}`}>
-                    {importance === 'high' ? '🔴 สำคัญ' : '🟢 ไม่สำคัญ'}
-                  </span>
-                  <span className={`px-1.5 py-0.5 rounded-full ${urgency === 'high' ? 'bg-red-900 text-red-200' : 'bg-green-900 text-green-200'}`}>
-                    {urgency === 'high' ? '⚡ เร่งด่วน' : '⏱️ ไม่เร่งด่วน'}
-                  </span>
-                  {dueDate && (
-                    <span className={`px-1.5 py-0.5 rounded-full ${isOverdue() ? 'bg-red-900 text-red-200' : 'bg-blue-900 text-blue-200'}`}>
-                      📅 {getTimeRemaining()}
-                    </span>
-                  )}
-                </div>
+                
+                {/* แสดงหมวดหมู่และแท็ก */}
+                {(categories.length > 0 || tags.length > 0) && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {categories.map(category => {
+                      if (typeof category !== 'string') {
+                        return null; // ข้ามรายการที่ไม่ใช่ string
+                      }
+                      return (
+                        <span 
+                          key={typeof category === 'string' ? category : `category-${Math.random()}`} 
+                          className="inline-block px-1.5 py-0.5 bg-[#262626] text-gray-300 rounded text-xs"
+                        >
+                          {typeof category === 'string' ? category : ''}
+                        </span>
+                      );
+                    })}
+                    
+                    {tags.map(tag => {
+                      if (typeof tag !== 'string') {
+                        return null; // ข้ามรายการที่ไม่ใช่ string
+                      }
+                      return (
+                        <span 
+                          key={typeof tag === 'string' ? tag : `tag-${Math.random()}`} 
+                          className="inline-block px-1.5 py-0.5 bg-[#1f2937] text-blue-300 rounded text-xs"
+                        >
+                          #{typeof tag === 'string' ? tag : ''}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {/* แสดงกำหนดส่ง */}
                 {dueDate && (
-                  <div className="text-xs text-gray-400 mt-2">
-                    กำหนดส่ง: {formatDate(dueDate)}
+                  <div className={`text-xs mt-1 ${isOverdue() ? 'text-red-400' : 'text-gray-400'}`}>
+                    <span className="mr-1">📅</span>
+                    {formatDate(dueDate)} 
+                    <span className="ml-1">
+                      ({getTimeRemaining()})
+                    </span>
+                  </div>
+                )}
+                
+                {/* แสดงการแจ้งเตือน */}
+                {reminderDate && (
+                  <div className="text-xs mt-0.5 text-gray-400">
+                    <span className="mr-1">🔔</span>
+                    {formatDate(reminderDate)}
                   </div>
                 )}
               </div>
             </div>
+            
             <div className="flex ml-2 space-x-1">
               <button
                 onClick={() => setIsEditing(true)}
