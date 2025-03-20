@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #ff6100;
+  --primary-light: #ff884d;
+  --primary-dark: #cc4d00;
+  --gray-dark: #121212;
+  --gray-medium: #1e1e1e;
+  --gray-light: #2d2d2d;
 }
 
 @theme inline {
@@ -23,4 +29,118 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  font-weight: 400;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(255, 97, 0, 0.08) 0%, transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(255, 97, 0, 0.05) 0%, transparent 30%);
+}
+
+input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--primary);
+}
+
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.hover-pulse:hover {
+  animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(255, 97, 0, 0); }
+  50% { box-shadow: 0 0 10px rgba(255, 97, 0, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(255, 97, 0, 0); }
+}
+
+.hover-glow:hover {
+  animation: glow 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
+}
+
+.shimmer-effect {
+  background: linear-gradient(to right, var(--gray-medium) 4%, var(--gray-light) 25%, var(--gray-medium) 36%);
+  background-size: 600px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes highlight-animation {
+  0% { background-color: rgba(255, 97, 0, 0.2); }
+  50% { background-color: rgba(255, 97, 0, 0.3); }
+  100% { background-color: transparent; }
+}
+
+.highlight-todo {
+  animation: highlight-animation 2s ease-out forwards;
+}
+
+/* ปรับแต่ง scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-medium);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-dark);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* เพิ่มสำหรับมือถือ */
+@media (max-width: 640px) {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  input, button {
+    font-size: 16px; /* ป้องกันการซูมบนมือถือเมื่อกดที่ input */
+  }
+  
+  body {
+    background-image: 
+      radial-gradient(circle at 15% 30%, rgba(255, 97, 0, 0.08) 0%, transparent 20%),
+      radial-gradient(circle at 85% 20%, rgba(255, 97, 0, 0.05) 0%, transparent 20%);
+  }
 }

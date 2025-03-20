@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate Icons</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0a0a0a;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      flex-direction: column;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+    canvas {
+      border: 1px solid #333;
+      background-color: #000;
+      margin-bottom: 10px;
+    }
+    .icon-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .icon-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #ff6100;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #ff884d;
+    }
+  </style>
+</head>
+<body>
+  <h1>Life Manager Icon Generator</h1>
+  <p>สร้างไอคอนสำหรับ PWA โดยใช้ Canvas API</p>
+  
+  <div class="container">
+    <div class="icon-row">
+      <div class="icon-container">
+        <canvas id="icon72" width="72" height="72"></canvas>
+        <span>72x72</span>
+      </div>
+      <div class="icon-container">
+        <canvas id="icon96" width="96" height="96"></canvas>
+        <span>96x96</span>
+      </div>
+      <div class="icon-container">
+        <canvas id="icon128" width="128" height="128"></canvas>
+        <span>128x128</span>
+      </div>
+      <div class="icon-container">
+        <canvas id="icon144" width="144" height="144"></canvas>
+        <span>144x144</span>
+      </div>
+    </div>
+    <div class="icon-row">
+      <div class="icon-container">
+        <canvas id="icon152" width="152" height="152"></canvas>
+        <span>152x152</span>
+      </div>
+      <div class="icon-container">
+        <canvas id="icon192" width="192" height="192"></canvas>
+        <span>192x192</span>
+      </div>
+      <div class="icon-container">
+        <canvas id="icon384" width="384" height="384"></canvas>
+        <span>384x384</span>
+      </div>
+      <div class="icon-container">
+        <canvas id="icon512" width="512" height="512"></canvas>
+        <span>512x512</span>
+      </div>
+    </div>
+    
+    <button id="downloadAll">ดาวน์โหลดไอคอนทั้งหมด</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+      const mainColor = '#ff6100';
+      const darkColor = '#cc4d00';
+      
+      // วาดไอคอนสำหรับแต่ละขนาด
+      sizes.forEach(size => {
+        drawIcon(size);
+      });
+      
+      // ฟังก์ชันวาดไอคอน
+      function drawIcon(size) {
+        const canvas = document.getElementById(`icon${size}`);
+        const ctx = canvas.getContext('2d');
+        
+        // ล้าง canvas
+        ctx.clearRect(0, 0, size, size);
+        
+        // กำหนดพื้นหลังสีดำ
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, size, size);
+        
+        // คำนวณขนาดสำหรับการวาดสัญลักษณ์ตาราง (matrix)
+        const padding = size * 0.15;
+        const gridSize = size - (padding * 2);
+        const cellSize = gridSize / 2;
+        const strokeWidth = size * 0.03;
+        
+        // วาดกรอบนอก
+        ctx.strokeStyle = mainColor;
+        ctx.lineWidth = strokeWidth;
+        ctx.beginPath();
+        ctx.roundRect(padding, padding, gridSize, gridSize, [size * 0.1]);
+        ctx.stroke();
+        
+        // วาดเส้นตาราง
+        ctx.beginPath();
+        ctx.moveTo(padding + cellSize, padding);
+        ctx.lineTo(padding + cellSize, padding + gridSize);
+        ctx.moveTo(padding, padding + cellSize);
+        ctx.lineTo(padding + gridSize, padding + cellSize);
+        ctx.stroke();
+        
+        // วาดวงกลมแสดงความสำคัญในแต่ละช่อง
+        const circleRadius = cellSize * 0.25;
+        
+        // ช่องบนซ้าย (สำคัญ+เร่งด่วน) - วงกลมเต็ม
+        ctx.fillStyle = mainColor;
+        ctx.beginPath();
+        ctx.arc(
+          padding + (cellSize / 2), 
+          padding + (cellSize / 2), 
+          circleRadius, 
+          0, 
+          Math.PI * 2
+        );
+        ctx.fill();
+        
+        // ช่องบนขวา (สำคัญ+ไม่เร่งด่วน) - วงกลมเส้นขอบ
+        ctx.strokeStyle = mainColor;
+        ctx.lineWidth = strokeWidth * 0.8;
+        ctx.beginPath();
+        ctx.arc(
+          padding + cellSize + (cellSize / 2), 
+          padding + (cellSize / 2), 
+          circleRadius, 
+          0, 
+          Math.PI * 2
+        );
+        ctx.stroke();
+        
+        // ช่องล่างซ้าย (ไม่สำคัญ+เร่งด่วน) - วงกลมเส้นขอบ
+        ctx.beginPath();
+        ctx.arc(
+          padding + (cellSize / 2), 
+          padding + cellSize + (cellSize / 2), 
+          circleRadius, 
+          0, 
+          Math.PI * 2
+        );
+        ctx.stroke();
+        
+        // ไม่ต้องวาดในช่องล่างขวา (ไม่สำคัญ+ไม่เร่งด่วน)
+        
+        // เพิ่มเอฟเฟกต์เงา
+        ctx.shadowColor = mainColor;
+        ctx.shadowBlur = size * 0.05;
+        ctx.strokeStyle = mainColor;
+        ctx.lineWidth = strokeWidth * 0.5;
+        ctx.beginPath();
+        ctx.roundRect(padding, padding, gridSize, gridSize, [size * 0.1]);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      
+      // ฟังก์ชันดาวน์โหลดไอคอน
+      document.getElementById('downloadAll').addEventListener('click', function() {
+        sizes.forEach(size => {
+          const canvas = document.getElementById(`icon${size}`);
+          const link = document.createElement('a');
+          link.download = `icon-${size}x${size}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        });
+      });
+    });
+  </script>
+</body>
+</html> 
