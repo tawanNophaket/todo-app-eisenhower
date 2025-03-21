@@ -35,11 +35,11 @@ export default function CalendarView() {
   const router = useRouter();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [isLoading, setIsLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [currentView, setCurrentView] = useState<'month' | 'week' | 'day'>('month');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentView, setCurrentView] = useState<'month' | 'week' | 'day'>('day');
   
   // วันในสัปดาห์ภาษาไทย
   const thaiDays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];

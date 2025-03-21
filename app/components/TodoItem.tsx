@@ -19,9 +19,14 @@ interface TodoItemProps {
   pomodoroSessions?: number;
   efficiency?: number;
   lastPomodoroDate?: string;
+  parentId?: number;
+  subtasks?: number[];
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
   onEdit: (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean, timeSpent?: number, pomodoroSessions?: number, efficiency?: number, lastPomodoroDate?: string) => void;
+  onAddSubtask?: (parentId: number) => void;
+  hasChildTasks?: boolean;
+  isSubtask?: boolean;
 }
 
 export default function TodoItem({ 
@@ -42,9 +47,14 @@ export default function TodoItem({
   pomodoroSessions = 0,
   efficiency,
   lastPomodoroDate,
+  parentId,
+  subtasks = [],
   onToggle, 
   onDelete, 
-  onEdit 
+  onEdit,
+  onAddSubtask,
+  hasChildTasks = false,
+  isSubtask = false
 }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -71,7 +81,11 @@ export default function TodoItem({
   // ตรวจสอบขนาดหน้าจอเมื่อโหลดครั้งแรกและเมื่อขนาดหน้าจอเปลี่ยนแปลง
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobileView = window.innerWidth < 768;
+      setIsMobile(mobileView);
+      if (mobileView) {
+        setIsExpanded(true); // เปิดขยายอัตโนมัติสำหรับมือถือ
+      }
     };
     
     // ตรวจสอบขนาดหน้าจอเมื่อโหลดครั้งแรก
@@ -423,7 +437,7 @@ export default function TodoItem({
   }
 
   return (
-    <li className={`mb-3 p-3 rounded-lg border-l-4 ${getBorderColor()} ${getBackgroundColor()} transition-all duration-200 shadow-lg`}>
+    <li className={`mb-3 p-3 rounded-lg border-l-4 ${getBorderColor()} ${getBackgroundColor()} transition-all duration-200 shadow-lg ${isSubtask ? 'ml-6' : ''}`}>
       {/* ส่วนหัวของรายการ */}
       <div className="flex items-start justify-between">
         <div className="flex items-start flex-1">
@@ -437,8 +451,15 @@ export default function TodoItem({
           </div>
           <div className="flex-1">
             {!isEditing ? (
-              <div className={`text-lg ${completed ? 'line-through text-gray-500' : ''}`}>
-                {text}
+              <div className="flex flex-col">
+                <div className={`text-lg ${completed ? 'line-through text-gray-500' : ''}`}>
+                  {text}
+                </div>
+                {dueDate && !completed && (
+                  <div className={`text-sm ${getTimeRemainingColor()}`}>
+                    {getTimeRemaining()}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="mb-2">
@@ -555,14 +576,16 @@ export default function TodoItem({
               >
                 {showPomodoro ? '⏱️' : '🍅'}
               </button>
-              <button 
-                onClick={() => setIsExpanded(!isExpanded)} 
-                className="text-gray-400 hover:text-white"
-                aria-label={isExpanded ? 'ย่อ' : 'ขยาย'}
-                title={isExpanded ? 'ย่อ' : 'ขยาย'}
-              >
-                {isExpanded ? '▲' : '▼'}
-              </button>
+              {!isMobile && (
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)} 
+                  className="text-gray-400 hover:text-white"
+                  aria-label={isExpanded ? 'ย่อ' : 'ขยาย'}
+                  title={isExpanded ? 'ย่อ' : 'ขยาย'}
+                >
+                  {isExpanded ? '▲' : '▼'}
+                </button>
+              )}
               <button 
                 onClick={() => setIsEditing(true)} 
                 className="text-yellow-400 hover:text-yellow-300"
@@ -571,6 +594,16 @@ export default function TodoItem({
               >
                 ✏️
               </button>
+              {!isSubtask && onAddSubtask && (
+                <button 
+                  onClick={() => onAddSubtask(id)} 
+                  className="text-green-400 hover:text-green-300"
+                  aria-label="สร้างงานย่อย"
+                  title="สร้างงานย่อย"
+                >
+                  📋+
+                </button>
+              )}
               <button 
                 onClick={handleDelete} 
                 className={`${isDeleting ? 'text-red-500' : 'text-gray-400 hover:text-red-400'}`}
@@ -701,6 +734,13 @@ export default function TodoItem({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* แสดงสถานะงานย่อยถ้ามี */}
+      {hasChildTasks && (
+        <div className="mt-2 ml-4 text-sm text-blue-400">
+          มี {subtasks?.length || 0} งานย่อย
         </div>
       )}
     </li>
