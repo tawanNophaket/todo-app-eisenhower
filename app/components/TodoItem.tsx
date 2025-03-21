@@ -430,7 +430,7 @@ export default function TodoItem({
             <span className="text-lg">{timeRemaining.status === 'overdue' ? '⚠️' : '⏰'}</span>
             <span>
               {timeRemaining.status === 'overdue' ? 
-                `เลยกำหนดมาแล้ว ${Math.ceil(timeRemaining.diff)} วัน` :
+                `เลยกำหนดมาแล้ว ${Math.ceil(timeRemaining.diff || 0)} วัน` :
                 `เหลือเวลาอีก ${timeRemaining.value} ${timeRemaining.unit === 'minute' ? 'นาที' : timeRemaining.unit === 'hour' ? 'ชั่วโมง' : 'วัน'}`
               }
             </span>
