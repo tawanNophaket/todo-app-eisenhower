@@ -161,7 +161,7 @@ export default function TodoItem({
     const due = new Date(dueDate);
     
     if (due < now && !completed) {
-      return 'เลยกำหนดแล้ว';
+      return { text: 'เลยกำหนดแล้ว', status: 'overdue', diff: (now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24) };
     }
     
     const diffTime = due.getTime() - now.getTime();
@@ -171,13 +171,15 @@ export default function TodoItem({
       const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
       if (diffHours === 0) {
         const diffMinutes = Math.floor(diffTime / (1000 * 60));
-        return `อีก ${diffMinutes} นาที`;
+        return { text: `อีก ${diffMinutes} นาที`, status: 'urgent', value: diffMinutes, unit: 'minute' };
       }
-      return `อีก ${diffHours} ชั่วโมง`;
+      return { text: `อีก ${diffHours} ชั่วโมง`, status: 'soon', value: diffHours, unit: 'hour' };
     } else if (diffDays === 1) {
-      return 'พรุ่งนี้';
+      return { text: 'พรุ่งนี้', status: 'tomorrow', value: 1, unit: 'day' };
+    } else if (diffDays <= 3) {
+      return { text: `อีก ${diffDays} วัน`, status: 'upcoming', value: diffDays, unit: 'day' };
     } else {
-      return `อีก ${diffDays} วัน`;
+      return { text: `อีก ${diffDays} วัน`, status: 'future', value: diffDays, unit: 'day' };
     }
   };
 
@@ -200,6 +202,29 @@ export default function TodoItem({
   };
 
   const quadrantInfo = getQuadrantInfo();
+  const timeRemaining = dueDate ? getTimeRemaining() : null;
+
+  // ฟังก์ชั่นเพื่อกำหนดสีของเวลาที่เหลือตามความเร่งด่วน
+  const getTimeRemainingColor = () => {
+    if (!timeRemaining) return '';
+    
+    switch (timeRemaining.status) {
+      case 'overdue':
+        return 'text-red-500 font-semibold';
+      case 'urgent':
+        return 'text-red-400 font-semibold';
+      case 'soon':
+        return 'text-yellow-500 font-semibold';
+      case 'tomorrow':
+        return 'text-amber-400 font-semibold';
+      case 'upcoming':
+        return 'text-blue-400 font-semibold';
+      case 'future':
+        return 'text-gray-400 font-semibold';
+      default:
+        return 'text-gray-400';
+    }
+  };
 
   if (isEditing) {
     return (
@@ -322,194 +347,94 @@ export default function TodoItem({
   return (
     <div 
       id={`todo-${id}`}
-      className={`card p-3.5 my-3 ${getBorderColor()} ${completed ? 'opacity-70' : 'opacity-100'} ${isOverdue() ? 'border-red-400' : ''} bg-shine relative overflow-hidden animate-fadeIn transition-all duration-300 hover:translate-y-[-2px]`}
-      onClick={() => !isMobile && setIsExpanded(!isExpanded)}
+      className={`relative w-full mb-3 p-3 rounded-lg border-l-4 ${getBorderColor()} transition-all shadow-md ${getBackgroundColor()} ${completed ? 'opacity-70' : 'hover:bg-[#222]'}`}
     >
-      <div className="flex items-center gap-3 relative z-10">
-        <div className="relative">
-          <input
-            type="checkbox"
-            checked={completed}
-            onChange={() => onToggle(id)}
-            className="peer w-5 h-5 cursor-pointer accent-[#ff6100] rounded-md transition-all duration-200"
-          />
-          <span className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 scale-0 transition-transform peer-checked:scale-100 
-                            text-white text-xs duration-200 ease-out scale-on-press`}>
-            ✓
-          </span>
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <div className={`w-6 h-6 rounded-full ${quadrantInfo.bgColor} bg-opacity-20 flex items-center justify-center`}>
-              <span className="text-xs" title={quadrantInfo.name}>{getQuadrantIcon()}</span>
+      <div className="flex justify-between items-start gap-3">
+        <div className="flex items-start flex-1 gap-3 min-w-0">
+          <div className="pt-0.5">
+            <input
+              type="checkbox"
+              checked={completed}
+              onChange={() => onToggle(id)}
+              className="w-5 h-5 rounded-full bg-[#2d2d2d] border-[#3d3d3d] checked:bg-[#ff6100] checked:border-[#ff6100] focus:ring-0 focus:ring-offset-0 cursor-pointer transition-colors"
+            />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className={`flex flex-col ${completed ? 'line-through text-gray-500' : ''}`}>
+              <p className="text-sm font-medium break-words">{text}</p>
             </div>
-            <span className={`text-xs font-medium ${quadrantInfo.color}`}>{quadrantInfo.name}</span>
             
-            {isOverdue() && (
-              <span className="ml-auto text-xs bg-red-500 bg-opacity-20 text-red-400 px-2 py-0.5 rounded-full flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                เลยกำหนด
-              </span>
-            )}
-          </div>
-          
-          <div className={`text-sm font-medium ${completed ? 'line-through text-gray-500' : 'text-white'} break-words`}>
-            {text}
-          </div>
-          
-          {/* แสดงรายละเอียดทั้งหมดสำหรับมือถือ หรือเมื่อกดขยายบนจอใหญ่ */}
-          {(isMobile || isExpanded) && (
-            <div className="mt-3 text-xs space-y-2 bg-[#1a1a1a] p-2.5 rounded-lg animate-fadeIn">
-              {dueDate && (
-                <div className={`flex items-center ${isOverdue() ? 'text-red-400' : 'text-gray-400'}`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>
-                    {formatDate(dueDate)} 
-                    {isAllDay ? ' (ทั้งวัน)' : startTime && endTime ? ` (${startTime.substring(0, 5)}-${endTime.substring(0, 5)})` : ` (${getTimeRemaining()})`}
-                  </span>
+            <div className="flex flex-wrap mt-2 gap-2">
+              {importance && urgency && (
+                <div className={`rounded-full px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${completed ? 'bg-[#2a2a2a] text-gray-400' : `bg-gradient-to-r ${quadrantInfo.gradient} text-white`}`}>
+                  <span className="text-base">{getQuadrantIcon()}</span>
+                  <span>{quadrantInfo.name}</span>
                 </div>
               )}
               
-              {/* แสดงหมวดหมู่และแท็ก */}
+              {timeRemaining && (
+                <div className={`bg-[#2a2a2a] rounded-full px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${getTimeRemainingColor()}`}>
+                  <span className="text-base">⏱️</span>
+                  <span>{timeRemaining.text}</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex flex-wrap mt-2 gap-2">
+              {dueDate && (
+                <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
+                  <span className="text-base">📅</span>
+                  <span>{formatDate(dueDate)}</span>
+                </div>
+              )}
+              
               {categories.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <div className="flex items-center text-gray-400 min-w-full mb-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    <span>หมวดหมู่:</span>
-                  </div>
-                  {categories.map(category => {
-                    if (typeof category !== 'string') return null;
-                    return (
-                      <span 
-                        key={typeof category === 'string' ? category : `category-${Math.random()}`}
-                        className="inline-flex items-center px-2 py-1 bg-[#2a2a2a] hover:bg-[#333333] text-gray-300 rounded-full text-xs transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
-                        {typeof category === 'string' ? category : ''}
-                      </span>
-                    );
-                  })}
+                <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
+                  <span className="text-base">📂</span>
+                  <span>{categories.join(', ')}</span>
                 </div>
               )}
               
               {tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <div className="flex items-center text-gray-400 min-w-full mb-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                    </svg>
-                    <span>แท็ก:</span>
-                  </div>
-                  {tags.map(tag => {
-                    if (typeof tag !== 'string') return null;
-                    return (
-                      <span 
-                        key={typeof tag === 'string' ? tag : `tag-${Math.random()}`}
-                        className="inline-flex items-center px-2 py-1 bg-[#1f2937] hover:bg-[#2a3647] text-blue-300 rounded-full text-xs transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                        </svg>
-                        {typeof tag === 'string' ? tag : ''}
-                      </span>
-                    );
-                  })}
+                <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
+                  <span className="text-base">#</span>
+                  <span>{tags.join(', ')}</span>
                 </div>
               )}
             </div>
-          )}
-          
-          {!isMobile && !isExpanded && (dueDate || categories.length > 0 || tags.length > 0) && (
-            <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-              {dueDate && (
-                <span className={`flex items-center ${isOverdue() ? 'text-red-400' : ''}`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {isAllDay ? 'ทั้งวัน' : getTimeRemaining()}
-                </span>
-              )}
-              
-              {categories.length > 0 && (
-                <span className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  {categories[0]}{categories.length > 1 ? ` +${categories.length - 1}` : ''}
-                </span>
-              )}
-              
-              {tags.length > 0 && (
-                <span className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                  </svg>
-                  {tags.length}
-                </span>
-              )}
-            </div>
-          )}
+          </div>
         </div>
         
-        <div className="ml-2 flex space-x-2">
+        <div className="flex flex-col gap-2">
           <button
-            onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-            disabled={completed}
-            className={`p-2 rounded-full hover:bg-[#2d2d2d] transition-colors ${completed ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover-pulse'}`}
+            onClick={() => setIsEditing(true)}
+            className="text-xs p-2 bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d] rounded-lg transition-colors flex items-center justify-center"
             title="แก้ไข"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-            </svg>
+            <span className="text-base">✏️</span>
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-            className={`p-2 rounded-full hover:bg-[#2d2d2d] transition-colors ${isDeleting ? 'bg-red-500' : ''} hover-pulse`}
+            onClick={handleDelete}
+            className={`text-xs p-2 ${isDeleting ? 'bg-red-600 text-white' : 'bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d]'} rounded-lg transition-colors flex items-center justify-center`}
             title={isDeleting ? 'ยืนยันการลบ' : 'ลบ'}
           >
-            {isDeleting ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            )}
+            <span className="text-base">{isDeleting ? '✓' : '🗑️'}</span>
           </button>
         </div>
       </div>
       
-      {/* ปุ่มขยาย/ย่อสำหรับจอใหญ่เท่านั้น (ไม่แสดงบนมือถือ) */}
-      {!isMobile && (dueDate || categories.length > 0 || tags.length > 0) && !isExpanded && (
-        <div className="flex justify-center mt-2">
-          <button className="text-xs text-gray-400 flex items-center hover:text-[#ff6100] transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-            แสดงเพิ่มเติม
-          </button>
-        </div>
-      )}
-      {!isMobile && (dueDate || categories.length > 0 || tags.length > 0) && isExpanded && (
-        <div className="flex justify-center mt-2">
-          <button className="text-xs text-gray-400 flex items-center hover:text-[#ff6100] transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-            </svg>
-            ซ่อนข้อมูล
-          </button>
+      {timeRemaining && (timeRemaining.status === 'overdue' || timeRemaining.status === 'urgent' || timeRemaining.status === 'soon') && (
+        <div className="mt-2 pt-2 border-t border-[#3d3d3d]">
+          <div className={`text-sm font-medium flex items-center gap-2 ${getTimeRemainingColor()}`}>
+            <span className="text-lg">{timeRemaining.status === 'overdue' ? '⚠️' : '⏰'}</span>
+            <span>
+              {timeRemaining.status === 'overdue' ? 
+                `เลยกำหนดมาแล้ว ${Math.ceil(timeRemaining.diff)} วัน` :
+                `เหลือเวลาอีก ${timeRemaining.value} ${timeRemaining.unit === 'minute' ? 'นาที' : timeRemaining.unit === 'hour' ? 'ชั่วโมง' : 'วัน'}`
+              }
+            </span>
+          </div>
         </div>
       )}
     </div>

@@ -38,6 +38,8 @@ export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [currentView, setCurrentView] = useState<'month' | 'week' | 'day'>('month');
   
   // วันในสัปดาห์ภาษาไทย
   const thaiDays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
@@ -46,6 +48,21 @@ export default function CalendarView() {
     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
     'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
   ];
+
+  // อัพเดทเวลาปัจจุบันทุกนาที
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // อัพเดททุก 1 นาที
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  // ตั้งค่าวันที่ที่เลือกเป็นวันปัจจุบันเมื่อโหลดครั้งแรก
+  useEffect(() => {
+    const today = new Date();
+    setSelectedDate(today);
+  }, []);
 
   // โหลดข้อมูล todos จาก localStorage เมื่อคอมโพเนนต์โหลด
   useEffect(() => {
@@ -219,6 +236,260 @@ export default function CalendarView() {
            date.getFullYear() === new Date().getFullYear();
   };
 
+  // คำนวณเวลาปัจจุบันในรูปแบบ HH:MM
+  const getCurrentTimeString = () => {
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  // คำนวณเปอร์เซ็นต์ของเวลาปัจจุบันในวัน (สำหรับแสดงเส้นเวลาปัจจุบัน)
+  const getCurrentTimePercentage = () => {
+    const minutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    return (minutes / (24 * 60)) * 100;
+  };
+
+  // ตรวจสอบว่าวันที่ที่กำหนดเป็นวันนี้หรือไม่
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  // รูปแบบการแสดงหน้าปฏิทินตามมุมมองที่เลือก
+  const renderCalendarView = () => {
+    switch (currentView) {
+      case 'month':
+        return (
+          <div className="calendar">
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {thaiDays.map((day, index) => (
+                <div key={index} className="text-center text-sm font-medium text-gray-400 p-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {getDaysInMonth().map((date, index) => {
+                if (!date) {
+                  return <div key={`empty-${index}`} className="p-2 border border-[#2d2d2d] bg-[#1a1a1a] rounded-lg"></div>;
+                }
+                
+                const hasEventsOnDay = hasEvents(date);
+                const isTodayDate = isToday(date);
+                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+                const isSelected = selectedDate && 
+                  date.getDate() === selectedDate.getDate() && 
+                  date.getMonth() === selectedDate.getMonth() && 
+                  date.getFullYear() === selectedDate.getFullYear();
+                
+                return (
+                  <div 
+                    key={date.toString()}
+                    onClick={() => setSelectedDate(date)}
+                    className={`
+                      min-h-[80px] p-2 text-sm border ${isCurrentMonth ? 'border-[#2d2d2d]' : 'border-[#222]'} 
+                      ${isCurrentMonth ? 'bg-[#1e1e1e]' : 'bg-[#1a1a1a]'} 
+                      ${isSelected ? 'ring-2 ring-[#ff6100]' : ''} 
+                      ${isTodayDate ? 'border-blue-500' : ''} 
+                      rounded-lg cursor-pointer transition-all hover:bg-[#252525] relative overflow-hidden
+                    `}
+                  >
+                    <div className={`
+                      flex justify-center items-center w-7 h-7 rounded-full mb-1
+                      ${isTodayDate ? 'bg-blue-500 text-white' : isCurrentMonth ? 'text-white' : 'text-gray-500'}
+                    `}>
+                      {date.getDate()}
+                    </div>
+                    
+                    {hasEventsOnDay && (
+                      <div className="space-y-1">
+                        {getEventsForDate(date).slice(0, 3).map(event => (
+                          <div 
+                            key={event.id} 
+                            className={`
+                              text-xs px-1 py-0.5 rounded truncate 
+                              ${event.completed ? 'bg-gray-600 text-gray-300' : getEventColor(event.importance, event.urgency, event.completed)}
+                            `}
+                          >
+                            {event.isAllDay ? '🕒 ' : ''}
+                            {event.title}
+                          </div>
+                        ))}
+                        {getEventsForDate(date).length > 3 && (
+                          <div className="text-xs text-blue-400 text-right mt-1">
+                            +{getEventsForDate(date).length - 3} รายการ
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* แสดงเส้นเวลาปัจจุบันเฉพาะในวันนี้ */}
+                    {isTodayDate && (
+                      <div 
+                        className="absolute left-0 right-0 border-t border-red-500 z-10"
+                        style={{ top: `${getCurrentTimePercentage()}%` }}
+                      >
+                        <div className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-red-500"></div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+        
+      case 'week':
+        // สร้างวันในสัปดาห์ปัจจุบัน
+        const startOfWeek = new Date(currentMonth);
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        const daysInWeek = Array.from({ length: 7 }, (_, i) => {
+          const day = new Date(startOfWeek);
+          day.setDate(startOfWeek.getDate() + i);
+          return day;
+        });
+        
+        return (
+          <div className="week-view">
+            <div className="grid grid-cols-8 gap-1 mb-2">
+              <div className="text-center text-sm font-medium text-gray-400 p-2">เวลา</div>
+              {daysInWeek.map((day, index) => (
+                <div 
+                  key={index} 
+                  className={`text-center text-sm font-medium p-2 ${isToday(day) ? 'text-blue-400' : 'text-gray-400'}`}
+                >
+                  <div>{thaiDays[index]}</div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mt-1 ${isToday(day) ? 'bg-blue-500 text-white' : ''}`}>
+                    {day.getDate()}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="relative">
+              {/* ช่องเวลา */}
+              {Array.from({ length: 24 }, (_, i) => (
+                <div key={i} className="grid grid-cols-8 gap-1 border-t border-[#2d2d2d]">
+                  <div className="text-xs text-gray-400 p-1 text-right pr-2">
+                    {i.toString().padStart(2, '0')}:00
+                  </div>
+                  {daysInWeek.map((day, dayIndex) => (
+                    <div 
+                      key={`${i}-${dayIndex}`} 
+                      className={`h-12 p-1 ${isToday(day) ? 'bg-[#1f1f1f]' : 'bg-[#1a1a1a]'}`}
+                    >
+                      {/* แสดงอีเวนต์ที่อยู่ในช่วงเวลานี้ */}
+                      {events.filter(event => {
+                        const eventDate = new Date(event.start);
+                        const eventHour = eventDate.getHours();
+                        return (
+                          eventDate.getDate() === day.getDate() &&
+                          eventDate.getMonth() === day.getMonth() &&
+                          eventDate.getFullYear() === day.getFullYear() &&
+                          eventHour === i
+                        );
+                      }).map(event => (
+                        <div 
+                          key={event.id} 
+                          className={`text-xs px-1 py-0.5 rounded truncate mb-1 ${getEventColor(event.importance, event.urgency, event.completed)}`}
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ))}
+              
+              {/* เส้นแสดงเวลาปัจจุบัน */}
+              <div 
+                className="absolute left-0 right-0 border-t border-red-500 z-10 pointer-events-none"
+                style={{ 
+                  top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / (24 * 60) * (24 * 48)}px` 
+                }}
+              >
+                <div className="absolute left-16 -top-2 bg-red-500 text-white text-xs px-1 rounded">
+                  {getCurrentTimeString()}
+                </div>
+                <div className="absolute left-12 -top-1 w-2 h-2 rounded-full bg-red-500"></div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'day':
+        // มุมมองรายวัน
+        const selectedDay = selectedDate || new Date();
+        
+        return (
+          <div className="day-view">
+            <div className="text-center mb-4">
+              <h3 className="text-xl font-medium">
+                {selectedDay.getDate()} {thaiMonths[selectedDay.getMonth()]} {selectedDay.getFullYear() + 543}
+              </h3>
+              <p className={`text-sm ${isToday(selectedDay) ? 'text-blue-400' : 'text-gray-400'}`}>
+                {thaiDays[selectedDay.getDay()]}
+                {isToday(selectedDay) && ' (วันนี้)'}
+              </p>
+            </div>
+            
+            <div className="relative">
+              {/* ตารางเวลารายชั่วโมง */}
+              {Array.from({ length: 24 }, (_, i) => (
+                <div key={i} className="flex border-t border-[#2d2d2d]">
+                  <div className="w-16 text-xs text-gray-400 p-1 text-right pr-2">
+                    {i.toString().padStart(2, '0')}:00
+                  </div>
+                  <div className="flex-1 h-16 p-1 bg-[#1a1a1a]">
+                    {/* แสดงอีเวนต์ที่อยู่ในช่วงเวลานี้ */}
+                    {events.filter(event => {
+                      const eventDate = new Date(event.start);
+                      const eventHour = eventDate.getHours();
+                      return (
+                        eventDate.getDate() === selectedDay.getDate() &&
+                        eventDate.getMonth() === selectedDay.getMonth() &&
+                        eventDate.getFullYear() === selectedDay.getFullYear() &&
+                        eventHour === i
+                      );
+                    }).map(event => (
+                      <div 
+                        key={event.id} 
+                        className={`text-sm px-2 py-1 rounded mb-1 ${getEventColor(event.importance, event.urgency, event.completed)}`}
+                      >
+                        <div className="font-medium">{event.title}</div>
+                        <div className="text-xs">
+                          {event.start.getHours().toString().padStart(2, '0')}:
+                          {event.start.getMinutes().toString().padStart(2, '0')} - 
+                          {event.end.getHours().toString().padStart(2, '0')}:
+                          {event.end.getMinutes().toString().padStart(2, '0')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              
+              {/* เส้นแสดงเวลาปัจจุบัน (แสดงเฉพาะถ้าเป็นวันนี้) */}
+              {isToday(selectedDay) && (
+                <div 
+                  className="absolute left-0 right-0 border-t border-red-500 z-10 pointer-events-none"
+                  style={{ 
+                    top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / (24 * 60) * (24 * 64)}px` 
+                  }}
+                >
+                  <div className="absolute left-16 -top-2 bg-red-500 text-white text-xs px-1 rounded">
+                    {getCurrentTimeString()}
+                  </div>
+                  <div className="absolute left-12 -top-1 w-2 h-2 rounded-full bg-red-500"></div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full max-w-lg mx-auto px-3 min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -231,296 +502,221 @@ export default function CalendarView() {
   }
 
   return (
-    <div className="w-full max-w-lg mx-auto px-4 min-h-screen pb-24 bg-[#0a0a0a]">
-      <div className="mb-4 pt-3">
-        <Header />
-      </div>
+    <div className="min-h-screen bg-[var(--background-dark)] text-[var(--text-primary)] pb-12">
+      <Header />
       
-      <div className="flex justify-between items-center mb-6">
-        <button 
-          onClick={goToHome} 
-          className="glass-card p-2.5 rounded-full hover:bg-[#2a2a2a] transition-all duration-300 shadow-md flex items-center justify-center hover:scale-105"
-          aria-label="กลับไปหน้าหลัก"
-          title="กลับไปหน้าหลัก"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        </button>
-        
-        <div className="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#ff6100]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <h1 className="text-xl font-bold text-gradient">ปฏิทินงาน</h1>
-        </div>
-        
-        <button 
-          onClick={goToCurrentMonth} 
-          className="glass-card p-2.5 rounded-full hover:bg-[#2a2a2a] transition-all duration-300 shadow-md flex items-center justify-center hover:scale-105"
-          title="กลับไปยังเดือนปัจจุบัน"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-          </svg>
-        </button>
-      </div>
-      
-      {/* ปฏิทิน */}
-      <div className="glass-card overflow-hidden border-0 mb-6 animate-fadeIn shadow-lg">
-        {/* ส่วนหัวปฏิทิน */}
-        <div className="flex justify-between items-center p-4 border-b border-[#2a2a2a] bg-[rgba(26,26,26,0.8)]">
+      <div className="container max-w-4xl mx-auto mt-6 bg-[var(--card-bg)] rounded-xl p-5 shadow-lg">
+        <div className="app-card-header">
           <button 
-            onClick={goToPreviousMonth} 
-            className="p-2 rounded-full hover:bg-[#2a2a2a] transition-colors flex items-center justify-center hover-pulse"
-            aria-label="เดือนก่อนหน้า"
+            onClick={goToHome} 
+            className="app-button app-button-secondary flex items-center text-[var(--text-secondary)]"
+            title="กลับหน้าหลัก"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
+            <span>หน้าหลัก</span>
           </button>
           
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#ff6100]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <h1 className="text-xl font-medium text-center flex-1">ปฏิทินจัดการงาน</h1>
+          
+          <button 
+            onClick={goToCurrentMonth} 
+            className="app-button app-button-primary flex items-center"
+            title="ไปที่วันนี้"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span>{thaiMonths[currentMonth.getMonth()]} {currentMonth.getFullYear() + 543}</span>
-          </h2>
-          
-          <button 
-            onClick={goToNextMonth} 
-            className="p-2 rounded-full hover:bg-[#2a2a2a] transition-colors flex items-center justify-center hover-pulse"
-            aria-label="เดือนถัดไป"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
+            <span>วันนี้</span>
           </button>
         </div>
         
-        {/* วันในสัปดาห์ */}
-        <div className="grid grid-cols-7 bg-[rgba(26,26,26,0.6)]">
-          {thaiDays.map((day, index) => (
-            <div key={index} className="py-2 text-center">
-              <span className={`text-sm font-medium ${index === 0 ? 'text-red-400' : 'text-gray-300'}`}>
-                {day}
-              </span>
+        <div className="mb-6 pb-4 border-b border-[var(--border-color)]">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={goToPreviousMonth} 
+                className="app-button app-button-secondary p-2"
+                aria-label="เดือนก่อนหน้า"
+                title="เดือนก่อนหน้า"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <h2 className="text-lg font-medium">
+                {thaiMonths[currentMonth.getMonth()]} {currentMonth.getFullYear() + 543}
+              </h2>
+              
+              <button 
+                onClick={goToNextMonth} 
+                className="app-button app-button-secondary p-2"
+                aria-label="เดือนถัดไป"
+                title="เดือนถัดไป"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
-          ))}
-        </div>
-        
-        {/* วันในเดือน */}
-        <div className="grid grid-cols-7">
-          {renderCalendarWeeks().map((week, weekIndex) => (
-            <React.Fragment key={`week-${weekIndex}`}>
-              {week.map((day, dayIndex) => {
-                if (!day) return (
-                  <div 
-                    key={`empty-${weekIndex}-${dayIndex}`} 
-                    className="p-1 border-t border-[#2a2a2a] min-h-[70px] bg-[#0d0d0d] bg-opacity-40"
-                  ></div>
-                );
-                
-                const isToday = new Date().toDateString() === day.toDateString();
-                const hasEventsForDay = hasEvents(day);
-                const isSelected = selectedDate && selectedDate.toDateString() === day.toDateString();
-                const eventsForDay = getEventsForDate(day);
-                
-                return (
-                  <div 
-                    key={`day-${day.toDateString()}`} 
-                    className={`p-1 border-t border-[#2a2a2a] min-h-[70px] cursor-pointer transition-all duration-300
-                      ${isToday ? 'bg-[#1f1f1f]' : ''}
-                      ${isSelected ? 'bg-[#2a2a2a]' : ''}
-                      ${!isCurrentMonth(day) ? 'opacity-50' : ''}
-                      hover:bg-[#252525] hover:shadow-inner
-                    `}
-                    onClick={() => setSelectedDate(day)}
-                  >
-                    <div className="relative h-full">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className={`
-                          w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium
-                          ${isToday ? 'bg-gradient-to-br from-[#ff6100] to-[#ff884d] text-white shadow-sm' : ''}
-                        `}>
-                          {day.getDate()}
-                        </div>
-                        {hasEventsForDay && !isToday && (
-                          <div className="w-2 h-2 rounded-full bg-[#ff6100] animate-pulse"></div>
-                        )}
-                      </div>
-                      
-                      {/* แสดงรายการ events */}
-                      <div className="space-y-1 overflow-hidden max-h-[40px]">
-                        {eventsForDay.slice(0, 2).map(event => {
-                          // กำหนด class ของ border ที่เหมาะสม
-                          let borderLeftClass = 'border-l-2 border-l-white';
-                          if (event.completed) {
-                            borderLeftClass = 'border-l-2 border-l-gray-600';
-                          } else if (event.importance === 'high' && event.urgency === 'high') {
-                            borderLeftClass = 'border-l-2 border-l-red-500';
-                          } else if (event.importance === 'high' && event.urgency === 'low') {
-                            borderLeftClass = 'border-l-2 border-l-[#ff6100]';
-                          } else if (event.importance === 'low' && event.urgency === 'high') {
-                            borderLeftClass = 'border-l-2 border-l-yellow-500';
-                          } else if (event.importance === 'low' && event.urgency === 'low') {
-                            borderLeftClass = 'border-l-2 border-l-green-500';
-                          }
-                          
-                          return (
-                            <div 
-                              key={`event-${event.id}`} 
-                              className={`text-xs px-1.5 py-0.5 rounded-md truncate flex items-center gap-1 bg-[rgba(42,42,42,0.7)] backdrop-blur-sm ${borderLeftClass}`}
-                            >
-                              <span className="text-[10px]">{getEventIcon(event.importance, event.urgency)}</span>
-                              <span className={`truncate ${event.completed ? 'line-through opacity-50' : ''}`}>
-                                {event.title}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        
-                        {eventsForDay.length > 2 && (
-                          <div className="text-xs text-gray-400 pl-1 flex items-center gap-1 opacity-70">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                            </svg>
-                            <span>+{eventsForDay.length - 2} เพิ่มเติม</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-      
-      {/* แสดงรายละเอียดของวันที่เลือก */}
-      {selectedDate && (
-        <div className="mb-24 animate-fadeIn">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff6100] to-[#ff884d] border border-[#2d2d2d] flex items-center justify-center text-white font-bold shadow-lg">
-              {selectedDate.getDate()}
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setCurrentView('month')} 
+                className={`app-button text-sm rounded-lg transition-colors ${currentView === 'month' ? 'app-button-primary' : 'app-button-secondary'}`}
+                title="มุมมองรายเดือน"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                เดือน
+              </button>
+              <button 
+                onClick={() => setCurrentView('week')} 
+                className={`app-button text-sm rounded-lg transition-colors ${currentView === 'week' ? 'app-button-primary' : 'app-button-secondary'}`}
+                title="มุมมองรายสัปดาห์"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                สัปดาห์
+              </button>
+              <button 
+                onClick={() => setCurrentView('day')} 
+                className={`app-button text-sm rounded-lg transition-colors ${currentView === 'day' ? 'app-button-primary' : 'app-button-secondary'}`}
+                title="มุมมองรายวัน"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                วัน
+              </button>
             </div>
-            <h3 className="text-lg font-medium">
-              {selectedDate.getDate()} {thaiMonths[selectedDate.getMonth()]} {selectedDate.getFullYear() + 543}
-            </h3>
           </div>
           
-          <div className="glass-card p-5 border-0 shadow-lg">
-            {getEventsForDate(selectedDate).length === 0 ? (
-              <div className="text-gray-400 text-center py-8 flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="mb-1">ไม่มีรายการในวันนี้</p>
-                <p className="text-xs text-gray-500 mb-5">คุณสามารถเพิ่มรายการใหม่ได้ง่ายๆ</p>
-                <button 
-                  onClick={() => {
-                    router.push('/');
-                  }}
-                  className="btn-modern py-2 px-4 flex items-center gap-2 scale-on-press"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  เพิ่มรายการใหม่
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {getEventsForDate(selectedDate).map(event => {
-                  const eventColor = getEventColor(event.importance, event.urgency, event.completed);
-                  const icon = getEventIcon(event.importance, event.urgency);
-                  
-                  // กำหนด class ของ border ที่เหมาะสม
-                  let borderClass = 'border-transparent-30';
-                  if (event.completed) {
-                    borderClass = 'border-gray-transparent';
-                  } else if (event.importance === 'high' && event.urgency === 'high') {
-                    borderClass = 'border-red-transparent';
-                  } else if (event.importance === 'high' && event.urgency === 'low') {
-                    borderClass = 'border-orange-transparent';
-                  } else if (event.importance === 'low' && event.urgency === 'high') {
-                    borderClass = 'border-yellow-transparent';
-                  } else if (event.importance === 'low' && event.urgency === 'low') {
-                    borderClass = 'border-green-transparent';
-                  }
-                  
-                  // เตรียมค่าสำหรับเอฟเฟกต์เลื่อน
-                  const glassBg = event.completed ? 'rgba(45, 45, 45, 0.4)' : 'rgba(26, 26, 26, 0.7)';
-                  
-                  return (
-                    <div 
-                      key={`event-detail-${event.id}`} 
-                      className={`p-4 rounded-xl ${eventColor} bg-opacity-5 border ${borderClass} bg-shine backdrop-blur-sm animate-slide-up`}
-                      style={{backgroundColor: glassBg}}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 flex-shrink-0 w-8 h-8 ${eventColor} bg-opacity-20 rounded-full flex items-center justify-center text-white shadow-inner border border-white border-opacity-10`}>
-                          <span className="text-sm">{icon}</span>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className={`font-medium text-white ${event.completed ? 'line-through opacity-60' : ''} text-sm`}>
-                            {event.title}
-                          </div>
-                          
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2.5 text-gray-300">
-                            <div className="flex items-center text-xs">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              {event.isAllDay ? 'ทั้งวัน' : (
-                                <>
-                                  {event.start.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} 
-                                  - 
-                                  {event.end.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                                </>
-                              )}
+          <div className="flex flex-wrap gap-2 justify-center">
+            <div className="category-chip">
+              <span className="priority-badge priority-1">1</span>
+              <span>ทำทันที</span>
+            </div>
+            <div className="category-chip">
+              <span className="priority-badge priority-2">2</span>
+              <span>วางแผนทำ</span>
+            </div>
+            <div className="category-chip">
+              <span className="priority-badge priority-3">3</span>
+              <span>มอบหมาย</span>
+            </div>
+            <div className="category-chip">
+              <span className="priority-badge priority-4">4</span>
+              <span>ตัดทิ้ง</span>
+            </div>
+          </div>
+        </div>
+        
+        {isLoading ? (
+          <div className="flex justify-center items-center h-80">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="w-16 h-16 border-4 border-t-[var(--primary-color)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+              <p className="mt-4 text-[var(--text-secondary)]">กำลังโหลดข้อมูล...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#151515] p-4 rounded-lg overflow-x-auto shadow-inner">
+            {renderCalendarView()}
+          </div>
+        )}
+        
+        {selectedDate && currentView === 'month' && (
+          <div className="mt-6 content-section">
+            <h3 className="section-title">
+              รายการวันที่ {selectedDate.getDate()} {thaiMonths[selectedDate.getMonth()]} {selectedDate.getFullYear() + 543}
+              {isToday(selectedDate) && ' (วันนี้)'}
+            </h3>
+            
+            <div className="bg-[#151515] p-4 rounded-lg shadow-inner">
+              {getEventsForDate(selectedDate).length > 0 ? (
+                <div className="space-y-3">
+                  {getEventsForDate(selectedDate).map(event => {
+                    let priorityClass = '';
+                    let badgeContent = '';
+                    
+                    if (event.importance === 'high' && event.urgency === 'high') {
+                      priorityClass = 'priority-1';
+                      badgeContent = '1';
+                    } else if (event.importance === 'high' && event.urgency === 'low') {
+                      priorityClass = 'priority-2';
+                      badgeContent = '2';
+                    } else if (event.importance === 'low' && event.urgency === 'high') {
+                      priorityClass = 'priority-3';
+                      badgeContent = '3';
+                    } else {
+                      priorityClass = 'priority-4';
+                      badgeContent = '4';
+                    }
+                    
+                    return (
+                      <div 
+                        key={event.id} 
+                        className={`p-3 rounded-lg border-l-4 hover-lift ${
+                          event.completed 
+                            ? 'border-gray-600 bg-[#1a1a1a]' 
+                            : `border-${priorityClass.replace('priority-', '')} bg-[#1e1e1e]`
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`priority-badge ${priorityClass}`}>{badgeContent}</span>
+                              <h4 className={`font-medium ${event.completed ? 'line-through text-gray-400' : 'text-white'}`}>{event.title}</h4>
                             </div>
-                            
-                            {event.categories.length > 0 && (
-                              <div className="flex items-center text-xs">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            <div className="flex flex-wrap mt-2 gap-3 text-xs">
+                              <span className="category-chip">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                {event.categories[0]}
-                                {event.categories.length > 1 && ` +${event.categories.length - 1}`}
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center text-xs">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              {event.completed ? 'เสร็จสิ้น' : 'ยังไม่เสร็จ'}
+                                {event.isAllDay 
+                                  ? 'ทั้งวัน' 
+                                  : `${event.start.getHours().toString().padStart(2, '0')}:${event.start.getMinutes().toString().padStart(2, '0')} - 
+                                     ${event.end.getHours().toString().padStart(2, '0')}:${event.end.getMinutes().toString().padStart(2, '0')}`
+                                }
+                              </span>
+                              {event.categories.length > 0 && (
+                                <span className="category-chip">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                  </svg>
+                                  {event.categories.join(', ')}
+                                </span>
+                              )}
+                              <span className="category-chip">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {event.completed ? 'เสร็จสิ้น' : 'อยู่ระหว่างดำเนินการ'}
+                              </span>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 flex flex-col items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-[var(--border-color)] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <div className="text-[var(--text-secondary)]">ไม่มีรายการในวันนี้</div>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">เพิ่มรายการใหม่ได้ที่หน้ารายการงาน</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-      
-      {/* ปุ่มลอยด้านล่างเพื่อไปยังหน้าหลัก */}
-      <button 
-        onClick={goToHome}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-[#ff6100] to-[#ff884d] text-white rounded-full shadow-lg flex items-center justify-center z-10 hover:scale-110 transition-all duration-300 hover-glow"
-        aria-label="กลับสู่หน้าหลัก"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      </button>
+        )}
+      </div>
     </div>
   );
 } 
