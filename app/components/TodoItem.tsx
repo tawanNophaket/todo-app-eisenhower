@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PomodoroTimer from './PomodoroTimer';
 
 interface TodoItemProps {
   id: number;
@@ -14,9 +15,13 @@ interface TodoItemProps {
   startTime?: string;
   endTime?: string;
   isAllDay?: boolean;
+  timeSpent?: number;
+  pomodoroSessions?: number;
+  efficiency?: number;
+  lastPomodoroDate?: string;
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
-  onEdit: (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean) => void;
+  onEdit: (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean, timeSpent?: number, pomodoroSessions?: number, efficiency?: number, lastPomodoroDate?: string) => void;
 }
 
 export default function TodoItem({ 
@@ -33,12 +38,17 @@ export default function TodoItem({
   startTime,
   endTime,
   isAllDay = false,
+  timeSpent = 0,
+  pomodoroSessions = 0,
+  efficiency,
+  lastPomodoroDate,
   onToggle, 
   onDelete, 
   onEdit 
 }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showPomodoro, setShowPomodoro] = useState(false);
   const [editedText, setEditedText] = useState(text);
   const [editedImportance, setEditedImportance] = useState<'high' | 'low'>(importance);
   const [editedUrgency, setEditedUrgency] = useState<'high' | 'low'>(urgency);
@@ -103,6 +113,50 @@ export default function TodoItem({
     }
   };
 
+  // จัดการเมื่อ Pomodoro เสร็จสิ้น
+  const handlePomodoroComplete = (todoId: number, sessionTime: number) => {
+    onEdit(
+      id,
+      text,
+      importance,
+      urgency,
+      dueDate,
+      reminderDate,
+      categories,
+      tags,
+      startTime,
+      endTime,
+      isAllDay,
+      (timeSpent || 0) + sessionTime,
+      (pomodoroSessions || 0) + 1,
+      efficiency,
+      new Date().toISOString()
+    );
+  };
+
+  // จัดการเมื่อหยุด Pomodoro
+  const handlePomodoroPause = (todoId: number, elapsedTime: number) => {
+    if (elapsedTime > 0) {
+      onEdit(
+        id,
+        text,
+        importance,
+        urgency,
+        dueDate,
+        reminderDate,
+        categories,
+        tags,
+        startTime,
+        endTime,
+        isAllDay,
+        (timeSpent || 0) + elapsedTime,
+        pomodoroSessions,
+        efficiency,
+        new Date().toISOString()
+      );
+    }
+  };
+
   // กำหนดสีของกรอบตามประเภทของงาน
   const getBorderColor = () => {
     if (quadrant === 1) return 'border-red-500';
@@ -138,6 +192,18 @@ export default function TodoItem({
     if (importance === 'low' && urgency === 'low') 
       return { name: 'ตัดทิ้ง', color: 'text-green-500', bgColor: 'bg-green-500', gradient: 'from-green-500 to-green-700' };
     return { name: '', color: 'text-gray-400', bgColor: 'bg-gray-500', gradient: 'from-gray-500 to-gray-700' };
+  };
+
+  // ฟอร์แมตเวลาในรูปแบบที่อ่านง่าย
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds} วินาที`;
+    
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} นาที`;
+    
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours} ชั่วโมง ${remainingMinutes} นาที`;
   };
 
   // ฟอร์แมตวันที่ให้อ่านง่าย
@@ -351,251 +417,286 @@ export default function TodoItem({
   }
 
   return (
-    <div 
-      className={`group relative p-3 mb-3 rounded-xl border cursor-pointer overflow-hidden animate-fadeIn transition-all duration-200 ${
-        isExpanded ? 'bg-[#1a1a1a] border-[#3d3d3d]' : 'bg-[#1e1e1e] border-[#2a2a2a] hover:bg-[#1a1a1a]'
-      } ${completed ? 'opacity-60' : 'hover:border-[#ff6100]/30'} ${
-        isImportantUrgent ? 'border-l-4 border-l-red-500' : 
-        isImportantNotUrgent ? 'border-l-4 border-l-[#ff6100]' : 
-        isNotImportantUrgent ? 'border-l-4 border-l-yellow-500' : 
-        'border-l-4 border-l-green-500'
-      } todo-card shiny-effect`}
-      onClick={() => !isEditing && setIsExpanded(!isExpanded)}
-    >
-      {/* Top Badge - Quadrant indicator */}
-      <div className="absolute top-0 right-0 px-2 py-0.5 text-xs font-medium rounded-bl-md glassmorphism">
-        {isImportantUrgent && <span className="flex items-center text-red-500">🔥 Q1</span>}
-        {isImportantNotUrgent && <span className="flex items-center text-[#ff6100]">📋 Q2</span>}
-        {isNotImportantUrgent && <span className="flex items-center text-yellow-500">⏰ Q3</span>}
-        {isNotImportantNotUrgent && <span className="flex items-center text-green-500">🍃 Q4</span>}
-      </div>
-
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={completed}
-            onChange={() => onToggle(id)}
-            className="checkbox-custom"
-          />
-        </div>
-
-        <div className="flex-1">
-          {isEditing ? (
-            <div>
-              <div className="flex items-center mb-1 group">
-                <h3 
-                  className={`flex-1 text-sm font-medium mr-2 group-hover:text-[#ff6100] transition-colors ${
-                    completed ? 'line-through text-gray-400' : 'text-white'
-                  }`}
-                >
-                  {text}
-                </h3>
-                <div className="flex items-center gap-1">
-                  {dueDate && (
-                    <div className="flex items-center gap-1 text-xs text-gray-400 badge-modern">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 icon-bounce">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                      </svg>
-                      {new Date(dueDate).toLocaleDateString()}
-                    </div>
-                  )}
-                  <div 
-                    className="icon-menu p-1.5 rounded-full hover:bg-[#252525] cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsExpanded(true);
-                      setIsEditing(true);
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-[#ff6100] transition-colors icon-bounce">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                    </svg>
-                  </div>
-                  <div 
-                    className="icon-menu p-1.5 rounded-full hover:bg-[#252525] cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(id);
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-red-500 transition-colors icon-bounce">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              
-              {!isExpanded && (categories.length > 0 || tags.length > 0) && (
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  {categories.map((category) => (
-                    <span key={category} className="badge-modern hover:bg-[#ff6100]/10 hover:text-[#ff6100] transition-colors">
-                      {category}
-                    </span>
-                  ))}
-                  
-                  {tags.map((tag) => (
-                    <span key={tag} className="badge-modern !bg-[#202020] text-gray-400 hover:bg-[#ff6100]/10 hover:text-[#ff6100] transition-colors">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-center mb-1 group">
-                <h3 
-                  className={`flex-1 text-sm font-medium mr-2 group-hover:text-[#ff6100] transition-colors ${
-                    completed ? 'line-through text-gray-400' : isExpanded ? 'text-white' : 'text-gradient'
-                  }`}
-                >
-                  {text}
-                </h3>
-                <div className="flex items-center gap-1">
-                  {dueDate && (
-                    <div className="flex items-center gap-1 text-xs text-gray-400 badge-modern">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 icon-bounce">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                      </svg>
-                      {new Date(dueDate).toLocaleDateString()}
-                    </div>
-                  )}
-                  <div 
-                    className="icon-menu"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsExpanded(true);
-                      setIsEditing(true);
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-[#ff6100] transition-colors icon-bounce">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                    </svg>
-                  </div>
-                  <div 
-                    className="icon-menu"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(id);
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-red-500 transition-colors icon-bounce">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              
-              {!isExpanded && (categories.length > 0 || tags.length > 0) && (
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap slide-up-animation">
-                  {categories.map((category) => (
-                    <span key={category} className="badge-modern">
-                      {category}
-                    </span>
-                  ))}
-                  
-                  {tags.map((tag) => (
-                    <span key={tag} className="badge-modern !bg-[#202020] text-gray-400">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {timeRemaining && (timeRemaining.status === 'overdue' || timeRemaining.status === 'urgent' || timeRemaining.status === 'soon') && (
-        <div className="mt-2 pt-2 border-t border-[#3d3d3d]">
-          <div className={`text-sm font-medium flex items-center gap-2 ${getTimeRemainingColor()} popup-effect`}>
-            <span className="text-lg">{timeRemaining.status === 'overdue' ? '⚠️' : '⏰'}</span>
-            <span>
-              {timeRemaining.status === 'overdue' ? 
-                `เลยกำหนดมาแล้ว ${Math.ceil(timeRemaining.diff || 0)} วัน` :
-                `เหลือเวลาอีก ${timeRemaining.value} ${timeRemaining.unit === 'minute' ? 'นาที' : timeRemaining.unit === 'hour' ? 'ชั่วโมง' : 'วัน'}`
-              }
-            </span>
+    <li className={`mb-3 p-3 rounded-lg border-l-4 ${getBorderColor()} ${getBackgroundColor()} transition-all duration-200 shadow-lg`}>
+      {/* ส่วนหัวของรายการ */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-start flex-1">
+          <div>
+            <input
+              type="checkbox"
+              checked={completed}
+              onChange={() => onToggle(id)}
+              className="mr-3 form-checkbox h-5 w-5 text-green-500 rounded focus:ring-0 focus:ring-offset-0 focus:ring-transparent"
+            />
           </div>
-        </div>
-      )}
-      
-      {isExpanded && !isEditing && (
-        <div className="mt-4 border-t border-[#3d3d3d] pt-4 slide-up-animation">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs text-gray-400 mb-1.5">หมวดหมู่</div>
-              <div className="flex flex-wrap gap-1.5">
-                {categories.length > 0 ? categories.map((category) => (
-                  <span key={category} className="badge-modern">
-                    {category}
-                  </span>
-                )) : (
-                  <span className="text-xs text-gray-500">ไม่มีหมวดหมู่</span>
-                )}
+          <div className="flex-1">
+            {!isEditing ? (
+              <div className={`text-lg ${completed ? 'line-through text-gray-500' : ''}`}>
+                {text}
               </div>
+            ) : (
+              <div className="mb-2">
+                <input
+                  type="text"
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="w-full p-1 mb-2 bg-gray-800 border border-gray-600 rounded-md"
+                  autoFocus
+                />
+              </div>
+            )}
+            
+            {/* แสดงแท็ก หมวดหมู่ และวันที่กำหนด */}
+            <div className="flex flex-wrap mt-1 gap-1">
+              {importance && urgency && !isEditing && (
+                <span 
+                  className={`
+                    inline-flex items-center text-xs font-medium mr-1 px-2 py-0.5 rounded-md 
+                    bg-gradient-to-b ${getQuadrantInfo().gradient}
+                  `}
+                >
+                  {getQuadrantIcon()} {getQuadrantInfo().name}
+                </span>
+              )}
+              
+              {categories.length > 0 && !isEditing && categories.map((category, index) => (
+                <span key={index} className="bg-blue-800 text-blue-100 text-xs font-medium mr-1 px-2 py-0.5 rounded">
+                  {category}
+                </span>
+              ))}
+              
+              {tags.length > 0 && !isEditing && tags.map((tag, index) => (
+                <span key={index} className="bg-gray-700 text-gray-200 text-xs font-medium mr-1 px-2 py-0.5 rounded">
+                  #{tag}
+                </span>
+              ))}
             </div>
             
-            <div>
-              <div className="text-xs text-gray-400 mb-1.5">แท็ก</div>
-              <div className="flex flex-wrap gap-1.5">
-                {tags.length > 0 ? tags.map((tag) => (
-                  <span key={tag} className="badge-modern !bg-[#202020] text-gray-400">
-                    #{tag}
-                  </span>
-                )) : (
-                  <span className="text-xs text-gray-500">ไม่มีแท็ก</span>
-                )}
-              </div>
+            {/* แสดงรายละเอียดวันที่และเวลา */}
+            <div className="text-sm mt-1">
+              {isExpanded && (
+                <>
+                  {dueDate && (
+                    <div className={`mt-1 ${isOverdue() ? 'text-red-400' : 'text-gray-400'}`}>
+                      <span className="font-medium mr-1">กำหนด:</span>
+                      <span>{formatDate(dueDate)}</span>
+                      {isOverdue() && !completed && (
+                        <span className="ml-2 text-red-500 font-medium">
+                          {getTimeRemaining()}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {reminderDate && (
+                    <div className="mt-1 text-gray-400">
+                      <span className="font-medium mr-1">แจ้งเตือน:</span>
+                      <span>{formatDate(reminderDate)}</span>
+                    </div>
+                  )}
+                  
+                  {/* แสดงข้อมูลการติดตามเวลา */}
+                  {(timeSpent > 0 || pomodoroSessions > 0) && (
+                    <div className="mt-1 text-gray-400">
+                      <span className="font-medium mr-1">เวลาที่ใช้:</span>
+                      <span>{formatTime(timeSpent)}</span>
+                      {pomodoroSessions > 0 && (
+                        <span className="ml-2">({pomodoroSessions} Pomodoro)</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* แสดงคะแนนประสิทธิภาพถ้ามี */}
+                  {efficiency !== undefined && (
+                    <div className="mt-1 text-gray-400 flex items-center">
+                      <span className="font-medium mr-1">ประสิทธิภาพ:</span>
+                      <div className="flex items-center">
+                        <span className="mr-1">{efficiency}/10</span>
+                        <div className="w-20 h-2 bg-gray-700 rounded-full">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              efficiency >= 7 ? 'bg-green-500' : 
+                              efficiency >= 4 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${efficiency * 10}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {lastPomodoroDate && (
+                    <div className="mt-1 text-gray-400">
+                      <span className="font-medium mr-1">Pomodoro ล่าสุด:</span>
+                      <span>{new Date(lastPomodoroDate).toLocaleDateString('th-TH')}</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
-          
-          {dueDate && (
-            <div className="mt-3">
-              <div className="text-xs text-gray-400 mb-1.5">กำหนดเวลา</div>
-              <div className="flex items-center gap-2 text-sm text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[#ff6100]">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                </svg>
-                <span>
-                  {new Date(dueDate).toLocaleString('th-TH', {
-                    dateStyle: 'full',
-                    timeStyle: 'short'
-                  })}
-                </span>
-              </div>
-            </div>
+        </div>
+        
+        {/* ปุ่มจัดการ */}
+        <div className="flex space-x-2 ml-2">
+          {!isEditing ? (
+            <>
+              <button 
+                onClick={() => setShowPomodoro(!showPomodoro)} 
+                className="text-blue-400 hover:text-blue-300"
+                aria-label="จับเวลา Pomodoro"
+                title="จับเวลา Pomodoro"
+              >
+                {showPomodoro ? '⏱️' : '🍅'}
+              </button>
+              <button 
+                onClick={() => setIsExpanded(!isExpanded)} 
+                className="text-gray-400 hover:text-white"
+                aria-label={isExpanded ? 'ย่อ' : 'ขยาย'}
+                title={isExpanded ? 'ย่อ' : 'ขยาย'}
+              >
+                {isExpanded ? '▲' : '▼'}
+              </button>
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className="text-yellow-400 hover:text-yellow-300"
+                aria-label="แก้ไข"
+                title="แก้ไข"
+              >
+                ✏️
+              </button>
+              <button 
+                onClick={handleDelete} 
+                className={`${isDeleting ? 'text-red-500' : 'text-gray-400 hover:text-red-400'}`}
+                aria-label={isDeleting ? 'ยืนยันการลบ' : 'ลบ'}
+                title={isDeleting ? 'ยืนยันการลบ' : 'ลบ'}
+              >
+                {isDeleting ? '❌' : '🗑️'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={handleEdit} 
+                className="text-green-400 hover:text-green-300"
+                aria-label="บันทึก"
+                title="บันทึก"
+              >
+                ✅
+              </button>
+              <button 
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditedText(text);
+                  setEditedImportance(importance);
+                  setEditedUrgency(urgency);
+                  setEditedDueDate(dueDate);
+                  setEditedReminderDate(reminderDate);
+                  setEditedCategories(categories);
+                  setEditedTags(tags);
+                }} 
+                className="text-red-400 hover:text-red-300"
+                aria-label="ยกเลิก"
+                title="ยกเลิก"
+              >
+                ❌
+              </button>
+            </>
           )}
+        </div>
+      </div>
+      
+      {/* แสดง Pomodoro Timer เมื่อคลิกปุ่ม */}
+      {showPomodoro && (
+        <div className="mt-3">
+          <PomodoroTimer 
+            todoId={id} 
+            isCompleted={completed}
+            onSessionComplete={handlePomodoroComplete}
+            onPause={handlePomodoroPause}
+          />
+        </div>
+      )}
+      
+      {/* แสดงฟอร์มแก้ไขเมื่อคลิกปุ่มแก้ไข */}
+      {isEditing && (
+        <div className="mt-3 space-y-2">
+          {/* ส่วนเลือกความสำคัญ */}
+          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
+            <button
+              onClick={() => { setEditedImportance('high'); setEditedUrgency('high'); }}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'high' && editedUrgency === 'high' ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+            >
+              <span className="text-lg">🔥</span>
+              <span>ทำทันที</span>
+            </button>
+            <button
+              onClick={() => { setEditedImportance('high'); setEditedUrgency('low'); }}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'high' && editedUrgency === 'low' ? 'bg-gradient-to-br from-[#ff6100] to-[#cc4d00] text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+            >
+              <span className="text-lg">📋</span>
+              <span>วางแผนทำ</span>
+            </button>
+            <button
+              onClick={() => { setEditedImportance('low'); setEditedUrgency('high'); }}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'low' && editedUrgency === 'high' ? 'bg-gradient-to-br from-yellow-500 to-yellow-700 text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+            >
+              <span className="text-lg">⏰</span>
+              <span>มอบหมาย</span>
+            </button>
+            <button
+              onClick={() => { setEditedImportance('low'); setEditedUrgency('low'); }}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'low' && editedUrgency === 'low' ? 'bg-gradient-to-br from-green-500 to-green-700 text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+            >
+              <span className="text-lg">🍃</span>
+              <span>ตัดทิ้ง</span>
+            </button>
+          </div>
           
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsEditing(true);
-              }}
-              className="btn-modern text-sm py-2 px-4 flex-1 flex items-center justify-center gap-1.5"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-              </svg>
-              แก้ไข
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(id);
-              }}
-              className="btn-secondary text-sm py-2 px-4 flex items-center justify-center gap-1.5"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-              </svg>
-              ลบ
-            </button>
+          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
+            <input 
+              type="datetime-local" 
+              value={editedDueDate || ''} 
+              onChange={(e) => setEditedDueDate(e.target.value)}
+              className="w-full p-3 mb-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+            />
+            
+            <div className="flex items-center mb-3">
+              <input
+                type="checkbox"
+                id={`all-day-${id}`}
+                checked={editedIsAllDay}
+                onChange={(e) => setEditedIsAllDay(e.target.checked)}
+                className="w-4 h-4 mr-2 accent-[#ff6100]"
+              />
+              <label htmlFor={`all-day-${id}`} className="text-sm text-gray-300">ทั้งวัน</label>
+            </div>
+            
+            {!editedIsAllDay && (
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น</div>
+                  <input
+                    type="time"
+                    value={editedStartTime || ''}
+                    onChange={(e) => setEditedStartTime(e.target.value)}
+                    className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด</div>
+                  <input
+                    type="time"
+                    value={editedEndTime || ''}
+                    onChange={(e) => setEditedEndTime(e.target.value)}
+                    className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
-    </div>
+    </li>
   );
 } 

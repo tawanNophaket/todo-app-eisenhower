@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import TodoItem from './TodoItem';
 import Header from './Header';
 import NotificationManager from './NotificationManager';
+import TaskStatistics from './TaskStatistics';
 import { scheduleNotification } from '../utils/notificationManager';
 
 interface Todo {
@@ -19,6 +20,10 @@ interface Todo {
   startTime?: string;         // เวลาเริ่มต้น
   endTime?: string;           // เวลาสิ้นสุด
   isAllDay?: boolean;         // เป็นงานทั้งวันหรือไม่
+  timeSpent?: number;         // เวลาที่ใช้ไปในหน่วยวินาที
+  pomodoroSessions?: number;  // จำนวนเซสชัน Pomodoro ที่ใช้
+  efficiency?: number;        // คะแนนประสิทธิภาพ (1-10)
+  lastPomodoroDate?: string;  // วันที่ทำ Pomodoro ล่าสุด
 }
 
 export default function Todo() {
@@ -42,6 +47,7 @@ export default function Todo() {
   const [isLoading, setIsLoading] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
 
   // โหลดข้อมูล todos, categories และ tags จาก localStorage เมื่อ component โหลดครั้งแรก
   useEffect(() => {
@@ -193,7 +199,7 @@ export default function Todo() {
     setTodos(todos.filter(todo => todo.id !== id));
   };
 
-  const editTodo = (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean) => {
+  const editTodo = (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean, timeSpent?: number, pomodoroSessions?: number, efficiency?: number, lastPomodoroDate?: string) => {
     setTodos(
       todos.map(todo => {
         if (todo.id === id) {
@@ -208,7 +214,11 @@ export default function Todo() {
             tags: tags || todo.tags,
             startTime: startTime !== undefined ? startTime : todo.startTime,
             endTime: endTime !== undefined ? endTime : todo.endTime,
-            isAllDay: isAllDay !== undefined ? isAllDay : todo.isAllDay
+            isAllDay: isAllDay !== undefined ? isAllDay : todo.isAllDay,
+            timeSpent: timeSpent !== undefined ? timeSpent : todo.timeSpent,
+            pomodoroSessions: pomodoroSessions !== undefined ? pomodoroSessions : todo.pomodoroSessions,
+            efficiency: efficiency !== undefined ? efficiency : todo.efficiency,
+            lastPomodoroDate: lastPomodoroDate !== undefined ? lastPomodoroDate : todo.lastPomodoroDate
           };
           
           // จัดการกับการแจ้งเตือนที่เปลี่ยนแปลง
@@ -417,6 +427,54 @@ export default function Todo() {
     setNotificationPermission(permission);
   };
 
+  // ให้คะแนนประสิทธิภาพ
+  const rateEfficiency = (todoId: number, efficiency: number) => {
+    editTodo(
+      todoId,
+      todos.find(todo => todo.id === todoId)?.text || '',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      efficiency
+    );
+  };
+
+  // คำนวณเวลาที่ใช้ในแต่ละหมวดหมู่
+  const getCategoryTimes = () => {
+    const categoryTimes: Record<string, number> = {};
+    
+    todos.forEach(todo => {
+      if (todo.timeSpent && todo.timeSpent > 0) {
+        todo.categories.forEach(category => {
+          if (!categoryTimes[category]) {
+            categoryTimes[category] = 0;
+          }
+          // กระจายเวลาตามจำนวนหมวดหมู่
+          categoryTimes[category] += todo.timeSpent / todo.categories.length;
+        });
+      }
+    });
+    
+    return categoryTimes;
+  };
+
+  // คำนวณประสิทธิภาพเฉลี่ย
+  const getAverageEfficiency = () => {
+    const todosWithEfficiency = todos.filter(todo => todo.efficiency !== undefined);
+    if (todosWithEfficiency.length === 0) return 0;
+    
+    const sum = todosWithEfficiency.reduce((acc, todo) => acc + (todo.efficiency || 0), 0);
+    return sum / todosWithEfficiency.length;
+  };
+
   // ส่วนแสดงผลหลัก
   return (
     <div className="todo-app bg-[#151515] rounded-xl border border-[#262626] shadow-lg overflow-hidden relative">
@@ -574,16 +632,23 @@ export default function Todo() {
       
       {/* แสดงการตั้งค่าเพิ่มเติมเมื่อกดปุ่ม - Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-20 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
           <div 
-            className="glassmorphism rounded-xl p-5 w-full max-w-md border border-[#3d3d3d] shadow-xl popup-effect" 
+            className="glassmorphism rounded-xl p-5 w-full max-w-md border border-[#3d3d3d] shadow-xl popup-effect max-h-[90vh] overflow-y-auto" 
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold mb-4 text-gradient flex items-center gap-2">
+            <h3 className="text-lg font-bold mb-4 text-gradient flex items-center gap-2 sticky top-0 bg-[#1e1e1e] py-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               เพิ่มรายการใหม่
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="ml-auto text-gray-400 hover:text-white"
+                aria-label="ปิด"
+              >
+                ✕
+              </button>
             </h3>
             
             <div className="mb-4">
@@ -712,23 +777,32 @@ export default function Todo() {
               )}
             </div>
             
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-between mt-6 mb-2 sticky bottom-0 bg-[#1e1e1e] py-3">
               <button
-                onClick={() => setShowAddModal(false)}
-                className="btn-secondary"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setNewTodo('');
+                  setNewDueDate(undefined);
+                  setNewReminderDate(undefined);
+                  setNewCategories([]);
+                  setNewTags([]);
+                }}
+                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors focus:ring-2 focus:ring-gray-600"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={() => {
-                  addTodo();
-                  setShowAddModal(false);
+                  if (newTodo.trim() !== '') {
+                    addTodo();
+                    setShowAddModal(false);
+                  }
                 }}
-                className="btn-modern"
+                className={`px-5 py-2.5 bg-[#ff6100] hover:bg-[#ff7a30] text-white rounded-lg transition-colors focus:ring-2 focus:ring-[#ff6100]/50 ${
+                  newTodo.trim() === '' ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                disabled={newTodo.trim() === ''}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
                 เพิ่มรายการ
               </button>
             </div>
