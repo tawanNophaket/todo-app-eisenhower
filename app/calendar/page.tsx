@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Header from '../components/Header';
 
 interface Todo {
@@ -40,7 +40,7 @@ export default function CalendarView() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentView, setCurrentView] = useState<'month' | 'week' | 'day'>('day');
-  
+
   // วันในสัปดาห์ภาษาไทย
   const thaiDays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
   // เดือนภาษาไทย
@@ -54,10 +54,10 @@ export default function CalendarView() {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000); // อัพเดททุก 1 นาที
-    
+
     return () => clearInterval(timer);
   }, []);
-  
+
   // ตั้งค่าวันที่ที่เลือกเป็นวันปัจจุบันเมื่อโหลดครั้งแรก
   useEffect(() => {
     const today = new Date();
@@ -67,16 +67,16 @@ export default function CalendarView() {
   // โหลดข้อมูล todos จาก localStorage เมื่อคอมโพเนนต์โหลด
   useEffect(() => {
     setIsLoading(true);
-    
+
     // จำลองการโหลดข้อมูลช้าๆ
     setTimeout(() => {
       const savedTodos = localStorage.getItem('todos');
-      
+
       if (savedTodos) {
         try {
           const parsedTodos = JSON.parse(savedTodos);
           setTodos(parsedTodos);
-          
+
           // แปลง todos ที่มี dueDate เป็น events สำหรับปฏิทิน
           const calendarEvents = parsedTodos
             .filter((todo: Todo) => todo.dueDate)
@@ -87,7 +87,7 @@ export default function CalendarView() {
                 const [hours, minutes] = todo.startTime.split(':').map(Number);
                 start.setHours(hours, minutes);
               }
-              
+
               // ถ้าไม่มี endTime ให้กำหนดเวลาสิ้นสุดเป็น 1 ชั่วโมงหลังจากเวลาเริ่มต้น
               let end;
               if (todo.endTime && todo.dueDate) {
@@ -99,7 +99,7 @@ export default function CalendarView() {
               } else {
                 end = new Date(start.getTime() + 60 * 60 * 1000);
               }
-              
+
               return {
                 id: todo.id,
                 title: todo.text,
@@ -112,7 +112,7 @@ export default function CalendarView() {
                 categories: todo.categories
               };
             });
-          
+
           setEvents(calendarEvents);
         } catch (error) {
           console.error('Error parsing saved todos:', error);
@@ -120,7 +120,7 @@ export default function CalendarView() {
           setEvents([]);
         }
       }
-      
+
       setIsLoading(false);
     }, 800);
   }, []);
@@ -129,23 +129,23 @@ export default function CalendarView() {
   const getDaysInMonth = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
-    
+
     // วันแรกของเดือน
     const firstDay = new Date(year, month, 1);
     const firstDayOfWeek = firstDay.getDay(); // 0 = อาทิตย์, 1 = จันทร์, ...
-    
+
     // วันสุดท้ายของเดือน
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    
+
     // สร้างอาร์เรย์วันที่ โดยเริ่มต้นด้วยวันว่างสำหรับวันก่อนวันที่ 1 ของเดือน
     const days = Array(firstDayOfWeek).fill(null);
-    
+
     // เพิ่มวันที่ของเดือนปัจจุบัน
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(new Date(year, month, i));
     }
-    
+
     return days;
   };
 
@@ -169,7 +169,7 @@ export default function CalendarView() {
   // ตรวจสอบว่ามี event ในวันนี้หรือไม่
   const getEventsForDate = (date: Date | null) => {
     if (!date) return [];
-    
+
     return events.filter(event => {
       const eventDate = new Date(event.start);
       return (
@@ -187,15 +187,15 @@ export default function CalendarView() {
   const goToHome = () => {
     router.push('/');
   };
-  
+
   // ฟังก์ชันให้สีของ event ตามความสำคัญและความเร่งด่วน
   const getEventColor = (importance: 'high' | 'low', urgency: 'high' | 'low', completed: boolean) => {
     if (completed) return 'bg-gray-600 border-gray-600';
-    
+
     if (importance === 'high' && urgency === 'high') return 'bg-red-500 border-red-500';
-    if (importance === 'high' && urgency === 'low') return 'bg-[#ff6100] border-[#ff6100]';
-    if (importance === 'low' && urgency === 'high') return 'bg-yellow-500 border-yellow-500';
-    return 'bg-green-500 border-green-500';
+    if (importance === 'high' && urgency === 'low') return 'bg-indigo-500 border-indigo-500';
+    if (importance === 'low' && urgency === 'high') return 'bg-amber-500 border-amber-500';
+    return 'bg-emerald-500 border-emerald-500';
   };
 
   // ไอคอนประเภทงาน
@@ -222,18 +222,18 @@ export default function CalendarView() {
   const renderCalendarWeeks = () => {
     const days = getDaysInMonth();
     const weeks = [];
-    
+
     for (let i = 0; i < days.length; i += 7) {
       weeks.push(days.slice(i, i + 7));
     }
-    
+
     return weeks;
   };
 
   // ตรวจสอบว่าเป็นวันที่ในเดือนปัจจุบันหรือไม่
   const isCurrentMonth = (date: Date) => {
-    return date.getMonth() === new Date().getMonth() && 
-           date.getFullYear() === new Date().getFullYear();
+    return date.getMonth() === new Date().getMonth() &&
+      date.getFullYear() === new Date().getFullYear();
   };
 
   // คำนวณเวลาปัจจุบันในรูปแบบ HH:MM
@@ -253,8 +253,8 @@ export default function CalendarView() {
   const isToday = (date: Date) => {
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   };
 
   // รูปแบบการแสดงหน้าปฏิทินตามมุมมองที่เลือก
@@ -265,52 +265,51 @@ export default function CalendarView() {
           <div className="calendar">
             <div className="grid grid-cols-7 gap-1 mb-2">
               {thaiDays.map((day, index) => (
-                <div key={index} className="text-center text-sm font-medium text-gray-400 p-2">
+                <div key={index} className="text-center text-sm font-medium text-indigo-300 p-2">
                   {day}
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1.5">
               {getDaysInMonth().map((date, index) => {
                 if (!date) {
-                  return <div key={`empty-${index}`} className="p-2 border border-[#2d2d2d] bg-[#1a1a1a] rounded-lg"></div>;
+                  return <div key={`empty-${index}`} className="p-2 border border-indigo-500/10 bg-indigo-900/5 rounded-lg"></div>;
                 }
-                
+
                 const hasEventsOnDay = hasEvents(date);
                 const isTodayDate = isToday(date);
-                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
-                const isSelected = selectedDate && 
-                  date.getDate() === selectedDate.getDate() && 
-                  date.getMonth() === selectedDate.getMonth() && 
+                const isCurrentMonthDate = date.getMonth() === currentMonth.getMonth();
+                const isSelected = selectedDate &&
+                  date.getDate() === selectedDate.getDate() &&
+                  date.getMonth() === selectedDate.getMonth() &&
                   date.getFullYear() === selectedDate.getFullYear();
-                
+
                 return (
-                  <div 
+                  <div
                     key={date.toString()}
                     onClick={() => setSelectedDate(date)}
                     className={`
-                      min-h-[80px] p-2 text-sm border ${isCurrentMonth ? 'border-[#2d2d2d]' : 'border-[#222]'} 
-                      ${isCurrentMonth ? 'bg-[#1e1e1e]' : 'bg-[#1a1a1a]'} 
-                      ${isSelected ? 'ring-2 ring-[#ff6100]' : ''} 
-                      ${isTodayDate ? 'border-blue-500' : ''} 
-                      rounded-lg cursor-pointer transition-all hover:bg-[#252525] relative overflow-hidden
+                      min-h-[80px] p-2 text-sm border rounded-lg cursor-pointer transition-all hover:bg-indigo-900/10 relative overflow-hidden
+                      ${isCurrentMonthDate ? 'border-indigo-500/20 bg-indigo-900/10' : 'border-indigo-500/10 bg-indigo-900/5 opacity-50'}
+                      ${isSelected ? 'ring-2 ring-indigo-500' : ''} 
+                      ${isTodayDate ? 'border-indigo-400' : ''} 
                     `}
                   >
                     <div className={`
                       flex justify-center items-center w-7 h-7 rounded-full mb-1
-                      ${isTodayDate ? 'bg-blue-500 text-white' : isCurrentMonth ? 'text-white' : 'text-gray-500'}
+                      ${isTodayDate ? 'bg-indigo-500 text-white' : isCurrentMonthDate ? 'text-white' : 'text-gray-500'}
                     `}>
                       {date.getDate()}
                     </div>
-                    
+
                     {hasEventsOnDay && (
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         {getEventsForDate(date).slice(0, 3).map(event => (
-                          <div 
-                            key={event.id} 
+                          <div
+                            key={event.id}
                             className={`
-                              text-xs px-1 py-0.5 rounded truncate 
-                              ${event.completed ? 'bg-gray-600 text-gray-300' : getEventColor(event.importance, event.urgency, event.completed)}
+                              text-xs px-1.5 py-1 rounded-md shadow-sm truncate 
+                              ${event.completed ? 'bg-gray-600/80 text-gray-300' : getEventColor(event.importance, event.urgency, event.completed)}
                             `}
                           >
                             {event.isAllDay ? '🕒 ' : ''}
@@ -318,16 +317,16 @@ export default function CalendarView() {
                           </div>
                         ))}
                         {getEventsForDate(date).length > 3 && (
-                          <div className="text-xs text-blue-400 text-right mt-1">
+                          <div className="text-xs text-indigo-400 text-right mt-1">
                             +{getEventsForDate(date).length - 3} รายการ
                           </div>
                         )}
                       </div>
                     )}
-                    
+
                     {/* แสดงเส้นเวลาปัจจุบันเฉพาะในวันนี้ */}
                     {isTodayDate && (
-                      <div 
+                      <div
                         className="absolute left-0 right-0 border-t border-red-500 z-10"
                         style={{ top: `${getCurrentTimePercentage()}%` }}
                       >
@@ -340,7 +339,7 @@ export default function CalendarView() {
             </div>
           </div>
         );
-        
+
       case 'week':
         // สร้างวันในสัปดาห์ปัจจุบัน
         const startOfWeek = new Date(currentMonth);
@@ -350,18 +349,18 @@ export default function CalendarView() {
           day.setDate(startOfWeek.getDate() + i);
           return day;
         });
-        
+
         return (
           <div className="week-view">
             <div className="grid grid-cols-8 gap-1 mb-2">
-              <div className="text-center text-sm font-medium text-gray-400 p-2">เวลา</div>
+              <div className="text-center text-sm font-medium text-indigo-300 p-2">เวลา</div>
               {daysInWeek.map((day, index) => (
-                <div 
-                  key={index} 
-                  className={`text-center text-sm font-medium p-2 ${isToday(day) ? 'text-blue-400' : 'text-gray-400'}`}
+                <div
+                  key={index}
+                  className={`text-center text-sm font-medium p-2 ${isToday(day) ? 'text-indigo-400' : 'text-indigo-300'}`}
                 >
                   <div>{thaiDays[index]}</div>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mt-1 ${isToday(day) ? 'bg-blue-500 text-white' : ''}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mt-1 ${isToday(day) ? 'bg-indigo-500 text-white' : ''}`}>
                     {day.getDate()}
                   </div>
                 </div>
@@ -370,14 +369,14 @@ export default function CalendarView() {
             <div className="relative">
               {/* ช่องเวลา */}
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="grid grid-cols-8 gap-1 border-t border-[#2d2d2d]">
-                  <div className="text-xs text-gray-400 p-1 text-right pr-2">
+                <div key={i} className="grid grid-cols-8 gap-1 border-t border-indigo-500/20">
+                  <div className="text-xs text-indigo-300 p-1 text-right pr-2">
                     {i.toString().padStart(2, '0')}:00
                   </div>
                   {daysInWeek.map((day, dayIndex) => (
-                    <div 
-                      key={`${i}-${dayIndex}`} 
-                      className={`h-12 p-1 ${isToday(day) ? 'bg-[#1f1f1f]' : 'bg-[#1a1a1a]'}`}
+                    <div
+                      key={`${i}-${dayIndex}`}
+                      className={`h-12 p-1 ${isToday(day) ? 'bg-indigo-900/20' : 'bg-indigo-900/10'}`}
                     >
                       {/* แสดงอีเวนต์ที่อยู่ในช่วงเวลานี้ */}
                       {events.filter(event => {
@@ -390,9 +389,9 @@ export default function CalendarView() {
                           eventHour === i
                         );
                       }).map(event => (
-                        <div 
-                          key={event.id} 
-                          className={`text-xs px-1 py-0.5 rounded truncate mb-1 ${getEventColor(event.importance, event.urgency, event.completed)}`}
+                        <div
+                          key={event.id}
+                          className={`text-xs px-1.5 py-0.5 rounded-md truncate mb-1 shadow-sm ${getEventColor(event.importance, event.urgency, event.completed)}`}
                         >
                           {event.title}
                         </div>
@@ -401,47 +400,47 @@ export default function CalendarView() {
                   ))}
                 </div>
               ))}
-              
+
               {/* เส้นแสดงเวลาปัจจุบัน */}
-              <div 
-                className="absolute left-0 right-0 border-t border-red-500 z-10 pointer-events-none"
-                style={{ 
-                  top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / (24 * 60) * (24 * 48)}px` 
+              <div
+                className="absolute left-0 right-0 border-t-2 border-red-500 z-10 pointer-events-none"
+                style={{
+                  top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / (24 * 60) * (24 * 48)}px`
                 }}
               >
-                <div className="absolute left-16 -top-2 bg-red-500 text-white text-xs px-1 rounded">
+                <div className="absolute left-20 -top-2.5 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-md">
                   {getCurrentTimeString()}
                 </div>
-                <div className="absolute left-12 -top-1 w-2 h-2 rounded-full bg-red-500"></div>
+                <div className="absolute left-14 -top-1.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
               </div>
             </div>
           </div>
         );
-        
+
       case 'day':
         // มุมมองรายวัน
         const selectedDay = selectedDate || new Date();
-        
+
         return (
           <div className="day-view">
-            <div className="text-center mb-4">
-              <h3 className="text-xl font-medium">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-medium text-gradient-purple">
                 {selectedDay.getDate()} {thaiMonths[selectedDay.getMonth()]} {selectedDay.getFullYear() + 543}
               </h3>
-              <p className={`text-sm ${isToday(selectedDay) ? 'text-blue-400' : 'text-gray-400'}`}>
+              <p className={`text-sm ${isToday(selectedDay) ? 'text-indigo-400' : 'text-indigo-300'}`}>
                 {thaiDays[selectedDay.getDay()]}
                 {isToday(selectedDay) && ' (วันนี้)'}
               </p>
             </div>
-            
+
             <div className="relative">
               {/* ตารางเวลารายชั่วโมง */}
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="flex border-t border-[#2d2d2d]">
-                  <div className="w-16 text-xs text-gray-400 p-1 text-right pr-2">
+                <div key={i} className="flex border-t border-indigo-500/20">
+                  <div className="w-16 text-xs text-indigo-300 p-1 text-right pr-2">
                     {i.toString().padStart(2, '0')}:00
                   </div>
-                  <div className="flex-1 h-16 p-1 bg-[#1a1a1a]">
+                  <div className="flex-1 h-16 p-1 bg-indigo-900/10">
                     {/* แสดงอีเวนต์ที่อยู่ในช่วงเวลานี้ */}
                     {events.filter(event => {
                       const eventDate = new Date(event.start);
@@ -453,14 +452,14 @@ export default function CalendarView() {
                         eventHour === i
                       );
                     }).map(event => (
-                      <div 
-                        key={event.id} 
-                        className={`text-sm px-2 py-1 rounded mb-1 ${getEventColor(event.importance, event.urgency, event.completed)}`}
+                      <div
+                        key={event.id}
+                        className={`text-sm px-3 py-1.5 rounded-md mb-1 shadow-md ${getEventColor(event.importance, event.urgency, event.completed)}`}
                       >
                         <div className="font-medium">{event.title}</div>
-                        <div className="text-xs">
+                        <div className="text-xs mt-1">
                           {event.start.getHours().toString().padStart(2, '0')}:
-                          {event.start.getMinutes().toString().padStart(2, '0')} - 
+                          {event.start.getMinutes().toString().padStart(2, '0')} -
                           {event.end.getHours().toString().padStart(2, '0')}:
                           {event.end.getMinutes().toString().padStart(2, '0')}
                         </div>
@@ -469,19 +468,19 @@ export default function CalendarView() {
                   </div>
                 </div>
               ))}
-              
+
               {/* เส้นแสดงเวลาปัจจุบัน (แสดงเฉพาะถ้าเป็นวันนี้) */}
               {isToday(selectedDay) && (
-                <div 
-                  className="absolute left-0 right-0 border-t border-red-500 z-10 pointer-events-none"
-                  style={{ 
-                    top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / (24 * 60) * (24 * 64)}px` 
+                <div
+                  className="absolute left-0 right-0 border-t-2 border-red-500 z-10 pointer-events-none"
+                  style={{
+                    top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / (24 * 60) * (24 * 64)}px`
                   }}
                 >
-                  <div className="absolute left-16 -top-2 bg-red-500 text-white text-xs px-1 rounded">
+                  <div className="absolute left-20 -top-2.5 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-md shadow-md">
                     {getCurrentTimeString()}
                   </div>
-                  <div className="absolute left-12 -top-1 w-2 h-2 rounded-full bg-red-500"></div>
+                  <div className="absolute left-14 -top-1.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
                 </div>
               )}
             </div>
@@ -492,10 +491,13 @@ export default function CalendarView() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-lg mx-auto px-3 min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="w-full max-w-lg mx-auto px-3 min-h-screen bg-[var(--background-dark)] flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block w-14 h-14 border-4 border-[#ff6100] border-t-transparent rounded-full animate-spin mb-5"></div>
-          <p className="text-gray-400 font-light">กำลังโหลดข้อมูลปฏิทิน...</p>
+          <div className="relative inline-block">
+            <div className="absolute inset-0 rounded-full bg-indigo-500 blur-xl opacity-50 animate-pulse"></div>
+            <div className="relative inline-block w-14 h-14 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-5"></div>
+          </div>
+          <p className="text-indigo-200 font-light mt-4">กำลังโหลดข้อมูลปฏิทิน...</p>
         </div>
       </div>
     );
@@ -504,11 +506,11 @@ export default function CalendarView() {
   return (
     <div className="min-h-screen bg-[var(--background-dark)] text-[var(--text-primary)] pb-12">
       <Header />
-      
-      <div className="container max-w-4xl mx-auto mt-6 bg-[var(--card-bg)] rounded-xl p-5 shadow-lg">
+
+      <div className="container max-w-4xl mx-auto mt-6 app-card rounded-xl p-5 shadow-lg">
         <div className="app-card-header">
-          <button 
-            onClick={goToHome} 
+          <button
+            onClick={goToHome}
             className="app-button app-button-secondary flex items-center text-[var(--text-secondary)]"
             title="กลับหน้าหลัก"
           >
@@ -517,11 +519,11 @@ export default function CalendarView() {
             </svg>
             <span>หน้าหลัก</span>
           </button>
-          
-          <h1 className="text-xl font-medium text-center flex-1">ปฏิทินจัดการงาน</h1>
-          
-          <button 
-            onClick={goToCurrentMonth} 
+
+          <h1 className="text-xl font-medium text-center flex-1 text-gradient-purple">ปฏิทินจัดการงาน</h1>
+
+          <button
+            onClick={goToCurrentMonth}
             className="app-button app-button-primary flex items-center"
             title="ไปที่วันนี้"
           >
@@ -531,13 +533,13 @@ export default function CalendarView() {
             <span>วันนี้</span>
           </button>
         </div>
-        
+
         <div className="mb-6 pb-4 border-b border-[var(--border-color)]">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={goToPreviousMonth} 
-                className="app-button app-button-secondary p-2"
+              <button
+                onClick={goToPreviousMonth}
+                className="app-button app-button-secondary p-2 hover:bg-indigo-500/10"
                 aria-label="เดือนก่อนหน้า"
                 title="เดือนก่อนหน้า"
               >
@@ -545,14 +547,14 @@ export default function CalendarView() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              
-              <h2 className="text-lg font-medium">
+
+              <h2 className="text-lg font-medium text-gradient-purple">
                 {thaiMonths[currentMonth.getMonth()]} {currentMonth.getFullYear() + 543}
               </h2>
-              
-              <button 
-                onClick={goToNextMonth} 
-                className="app-button app-button-secondary p-2"
+
+              <button
+                onClick={goToNextMonth}
+                className="app-button app-button-secondary p-2 hover:bg-indigo-500/10"
                 aria-label="เดือนถัดไป"
                 title="เดือนถัดไป"
               >
@@ -561,10 +563,10 @@ export default function CalendarView() {
                 </svg>
               </button>
             </div>
-            
+
             <div className="flex gap-2">
-              <button 
-                onClick={() => setCurrentView('month')} 
+              <button
+                onClick={() => setCurrentView('month')}
                 className={`app-button text-sm rounded-lg transition-colors ${currentView === 'month' ? 'app-button-primary' : 'app-button-secondary'}`}
                 title="มุมมองรายเดือน"
               >
@@ -573,8 +575,8 @@ export default function CalendarView() {
                 </svg>
                 เดือน
               </button>
-              <button 
-                onClick={() => setCurrentView('week')} 
+              <button
+                onClick={() => setCurrentView('week')}
                 className={`app-button text-sm rounded-lg transition-colors ${currentView === 'week' ? 'app-button-primary' : 'app-button-secondary'}`}
                 title="มุมมองรายสัปดาห์"
               >
@@ -583,8 +585,8 @@ export default function CalendarView() {
                 </svg>
                 สัปดาห์
               </button>
-              <button 
-                onClick={() => setCurrentView('day')} 
+              <button
+                onClick={() => setCurrentView('day')}
                 className={`app-button text-sm rounded-lg transition-colors ${currentView === 'day' ? 'app-button-primary' : 'app-button-secondary'}`}
                 title="มุมมองรายวัน"
               >
@@ -595,7 +597,7 @@ export default function CalendarView() {
               </button>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2 justify-center">
             <div className="category-chip">
               <span className="priority-badge priority-1">1</span>
@@ -615,7 +617,7 @@ export default function CalendarView() {
             </div>
           </div>
         </div>
-        
+
         {isLoading ? (
           <div className="flex justify-center items-center h-80">
             <div className="animate-pulse flex flex-col items-center">
@@ -624,25 +626,25 @@ export default function CalendarView() {
             </div>
           </div>
         ) : (
-          <div className="bg-[#151515] p-4 rounded-lg overflow-x-auto shadow-inner">
+          <div className="bg-indigo-900/5 p-4 rounded-lg overflow-x-auto shadow-inner border border-indigo-500/10">
             {renderCalendarView()}
           </div>
         )}
-        
+
         {selectedDate && currentView === 'month' && (
           <div className="mt-6 content-section">
             <h3 className="section-title">
               รายการวันที่ {selectedDate.getDate()} {thaiMonths[selectedDate.getMonth()]} {selectedDate.getFullYear() + 543}
               {isToday(selectedDate) && ' (วันนี้)'}
             </h3>
-            
-            <div className="bg-[#151515] p-4 rounded-lg shadow-inner">
+
+            <div className="bg-indigo-900/5 p-4 rounded-lg shadow-inner border border-indigo-500/10">
               {getEventsForDate(selectedDate).length > 0 ? (
                 <div className="space-y-3">
                   {getEventsForDate(selectedDate).map(event => {
                     let priorityClass = '';
                     let badgeContent = '';
-                    
+
                     if (event.importance === 'high' && event.urgency === 'high') {
                       priorityClass = 'priority-1';
                       badgeContent = '1';
@@ -656,15 +658,14 @@ export default function CalendarView() {
                       priorityClass = 'priority-4';
                       badgeContent = '4';
                     }
-                    
+
                     return (
-                      <div 
-                        key={event.id} 
-                        className={`p-3 rounded-lg border-l-4 hover-lift ${
-                          event.completed 
-                            ? 'border-gray-600 bg-[#1a1a1a]' 
-                            : `border-${priorityClass.replace('priority-', '')} bg-[#1e1e1e]`
-                        }`}
+                      <div
+                        key={event.id}
+                        className={`p-3 rounded-lg border-l-4 hover-lift shadow-md ${event.completed
+                          ? 'border-gray-600 bg-[#1a1a1a]'
+                          : `border-${priorityClass.replace('priority-', '')} bg-[#1e1e1e]`
+                          }`}
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -677,8 +678,8 @@ export default function CalendarView() {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                {event.isAllDay 
-                                  ? 'ทั้งวัน' 
+                                {event.isAllDay
+                                  ? 'ทั้งวัน'
                                   : `${event.start.getHours().toString().padStart(2, '0')}:${event.start.getMinutes().toString().padStart(2, '0')} - 
                                      ${event.end.getHours().toString().padStart(2, '0')}:${event.end.getMinutes().toString().padStart(2, '0')}`
                                 }
@@ -706,11 +707,14 @@ export default function CalendarView() {
                 </div>
               ) : (
                 <div className="text-center py-8 flex flex-col items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-[var(--border-color)] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <div className="text-[var(--text-secondary)]">ไม่มีรายการในวันนี้</div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">เพิ่มรายการใหม่ได้ที่หน้ารายการงาน</p>
+                  <div className="relative mb-3">
+                    <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-xl opacity-30 animate-pulse"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-indigo-400 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div className="text-indigo-300">ไม่มีรายการในวันนี้</div>
+                  <p className="text-xs text-indigo-200/50 mt-1">เพิ่มรายการใหม่ได้ที่หน้ารายการงาน</p>
                 </div>
               )}
             </div>
@@ -719,4 +723,4 @@ export default function CalendarView() {
       </div>
     </div>
   );
-} 
+}

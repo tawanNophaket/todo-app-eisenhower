@@ -2,23 +2,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --background-secondary: #121212;
+  /* โทนสีหลักใหม่ ซึ่งเป็นสีม่วง-น้ำเงิน ดูทันสมัยและมีพลัง */
+  --background: #07071f;
+  --background-secondary: #0d0d2b;
   --foreground: #ffffff;
-  --primary: #ff6100;
-  --primary-light: #ff7a30;
-  --primary-dark: #cc4d00;
-  --primary-gradient: linear-gradient(135deg, #ff6100, #ff8f57);
-  --secondary-gradient: linear-gradient(135deg, #121212, #2a2a2a);
-  --accent: #00c2ff;
-  --accent-light: #66d9ff;
-  --gray-dark: #0d0d0d;
-  --gray-medium: #1a1a1a;
-  --gray-light: #2a2a2a;
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --primary-dark: #4f46e5;
+  --primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --secondary-gradient: linear-gradient(135deg, #0d0d2b, #1e1b4b);
+  --accent: #10b981;
+  --accent-light: #34d399;
+  --gray-dark: #0f0f23;
+  --gray-medium: #1d1d42;
+  --gray-light: #2d2b69;
   --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-  --button-shadow: 0 4px 12px rgba(255, 97, 0, 0.3);
-  --border-radius: 14px;
+  --button-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  --border-radius: 16px;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* สีความสำคัญสำหรับการจัดระดับงาน */
+  --priority-1: #ef4444;
+  /* ทำทันที */
+  --priority-2: #8b5cf6;
+  /* วางแผนทำ */
+  --priority-3: #f59e0b;
+  /* มอบหมาย */
+  --priority-4: #10b981;
+  /* ตัดทิ้ง */
+
+  /* ค่าอื่นๆ */
+  --max-content-width: 1200px;
+  --header-height: 64px;
+  --gutter: 16px;
 }
 
 @theme inline {
@@ -37,32 +53,115 @@ body {
   padding: 0;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
-  background-image: 
-    radial-gradient(circle at 5% 15%, rgba(255, 97, 0, 0.06) 0%, transparent 30%),
-    radial-gradient(circle at 95% 85%, rgba(0, 194, 255, 0.04) 0%, transparent 30%),
-    radial-gradient(circle at 50% 50%, rgba(18, 18, 18, 1) 0%, rgba(10, 10, 10, 1) 100%);
+  background-image:
+    radial-gradient(circle at 5% 15%, rgba(99, 102, 241, 0.06) 0%, transparent 30%),
+    radial-gradient(circle at 95% 85%, rgba(139, 92, 246, 0.04) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(13, 13, 43, 1) 0%, rgba(7, 7, 31, 1) 100%);
   letter-spacing: 0.01em;
 }
 
 /* Glass effect กระจก */
 .glass-card {
-  background: rgba(26, 26, 26, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(13, 13, 43, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   border-radius: var(--border-radius);
 }
 
+/* Navigation links */
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  color: rgba(255, 255, 255, 0.7);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--primary-gradient);
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+
+.nav-link:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link:hover::before {
+  width: 70%;
+  opacity: 1;
+}
+
+.nav-link-active {
+  color: white;
+  background: rgba(99, 102, 241, 0.1);
+  position: relative;
+}
+
+.nav-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 2px;
+  background: var(--primary-gradient);
+}
+
+/* Text gradients */
+.text-gradient-purple {
+  background: linear-gradient(to right, #6366f1, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.text-gradient-green {
+  background: linear-gradient(to right, #10b981, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
 /* ปรับแต่ง input */
-input, textarea, select {
-  background-color: rgba(42, 42, 42, 0.7) !important;
+input,
+textarea,
+select {
+  background-color: rgba(29, 29, 66, 0.7) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   color: white !important;
   font-family: 'Prompt', Arial, sans-serif;
   transition: var(--transition);
   backdrop-filter: blur(4px);
+  padding: 0.75rem 1rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+  transition: all 0.2s ease;
 }
 
 input[type="checkbox"] {
@@ -72,7 +171,7 @@ input[type="checkbox"] {
   border-radius: 4px !important;
   position: relative;
   transform-style: preserve-3d;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 input[type="checkbox"]:checked {
@@ -95,7 +194,7 @@ input[type="time"] {
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 500;
   box-shadow: var(--button-shadow);
   transition: var(--transition);
@@ -122,22 +221,22 @@ input[type="time"] {
 
 .btn-modern:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(255, 97, 0, 0.4);
+  box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
 }
 
 .btn-secondary {
-  background: rgba(42, 42, 42, 0.8);
+  background: rgba(29, 29, 66, 0.8);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.75rem 1.5rem;
-  border-radius: 10px;
+  border-radius: 12px;
   font-weight: 500;
   transition: var(--transition);
   backdrop-filter: blur(4px);
 }
 
 .btn-secondary:hover {
-  background: rgba(60, 60, 60, 0.8);
+  background: rgba(45, 43, 105, 0.8);
   transform: translateY(-2px);
 }
 
@@ -158,138 +257,207 @@ input[type="time"] {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* ฉากหลังเรืองแสง (glow) */
-.bg-shine {
+/* สไตล์ของ Card ในแอป */
+.app-card {
+  background: linear-gradient(145deg, rgba(13, 13, 43, 0.7), rgba(29, 29, 66, 0.7));
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.app-card:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  border-color: rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+}
+
+/* App Button Styles */
+.app-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.bg-shine:after {
+.app-button::after {
   content: '';
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   transform: rotate(30deg);
-  pointer-events: none;
-  z-index: 1;
+  transition: all 0.5s ease;
+  opacity: 0;
 }
 
-/* Text gradient */
-.text-gradient {
-  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
+.app-button:hover::after {
+  opacity: 1;
+  left: 100%;
 }
+
+.app-button-primary {
+  background: var(--primary-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.app-button-primary:hover {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+  transform: translateY(-2px);
+}
+
+.app-button-secondary {
+  background: rgba(29, 29, 66, 0.6);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.app-button-secondary:hover {
+  background: rgba(45, 43, 105, 0.6);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* Category Chips & Badges */
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(29, 29, 66, 0.6);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.category-chip:hover {
+  background: rgba(45, 43, 105, 0.6);
+  transform: translateY(-1px);
+}
+
+.badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(99, 102, 241, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  transition: all 0.2s ease;
+}
+
+.badge-modern:hover {
+  background: rgba(99, 102, 241, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Priority Badges */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: white;
+}
+
+.priority-1 {
+  background-color: var(--priority-1);
+}
+
+/* ทำทันที */
+.priority-2 {
+  background-color: var(--priority-2);
+}
+
+/* วางแผนทำ */
+.priority-3 {
+  background-color: var(--priority-3);
+}
+
+/* มอบหมาย */
+.priority-4 {
+  background-color: var(--priority-4);
+}
+
+/* ตัดทิ้ง */
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
-@keyframes fadeInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
 }
 
-.animate-fadeInRight {
-  animation: fadeInRight 0.4s ease-out forwards;
-}
-
-@keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.animate-fadeInLeft {
-  animation: fadeInLeft 0.4s ease-out forwards;
+.floating-animation {
+  animation: float 6s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
 }
 
-.hover-pulse:hover {
-  animation: pulse 0.5s ease-in-out;
-}
-
-@keyframes glow {
-  0% { box-shadow: 0 0 5px rgba(255, 97, 0, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(255, 97, 0, 0.6); }
-  100% { box-shadow: 0 0 5px rgba(255, 97, 0, 0.3); }
-}
-
-.hover-glow:hover {
-  animation: glow 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: -300px 0; }
-  100% { background-position: 300px 0; }
-}
-
-.shimmer-effect {
-  background: linear-gradient(to right, var(--gray-medium) 4%, var(--gray-light) 25%, var(--gray-medium) 36%);
-  background-size: 600px 100%;
-  animation: shimmer 1.5s infinite linear;
-}
-
-@keyframes highlight-animation {
-  0% { background-color: rgba(255, 97, 0, 0.2); }
-  50% { background-color: rgba(255, 97, 0, 0.3); }
-  100% { background-color: transparent; }
-}
-
-.highlight-todo {
-  animation: highlight-animation 2s ease-out forwards;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.animate-bounce-slow {
-  animation: bounce 2s ease-in-out infinite;
-}
-
-@keyframes scale {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.95); }
-  100% { transform: scale(1); }
-}
-
-.scale-on-press:active {
-  animation: scale 0.2s ease-in-out;
-}
-
-@keyframes slide-up {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.animate-slide-up {
-  animation: slide-up 0.4s ease forwards;
-}
-
-@keyframes reveal {
-  from { opacity: 0; clip-path: inset(0 0 100% 0); }
-  to { opacity: 1; clip-path: inset(0 0 0 0); }
-}
-
-.animate-reveal {
-  animation: reveal 0.5s ease forwards;
+.pulse-animation {
+  animation: pulse 2s infinite;
 }
 
 /* ปรับแต่ง scrollbar */
@@ -311,377 +479,32 @@ input[type="time"] {
   background: var(--primary);
 }
 
-/* สำหรับการ focus input ที่ดูดีขึ้น */
-input:focus, 
-textarea:focus, 
-select:focus {
-  outline: none; 
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 2px rgba(255, 97, 0, 0.2) !important;
-  transition: all 0.2s ease;
-}
-
-/* Custom border classes */
-.border-transparent-30 {
-  border-color: rgba(255, 255, 255, 0.3);
-}
-.border-red-transparent {
-  border-color: rgba(239, 68, 68, 0.3);
-}
-.border-orange-transparent {
-  border-color: rgba(255, 97, 0, 0.3);
-}
-.border-yellow-transparent {
-  border-color: rgba(234, 179, 8, 0.3);
-}
-.border-green-transparent {
-  border-color: rgba(34, 197, 94, 0.3);
-}
-.border-gray-transparent {
-  border-color: rgba(75, 85, 99, 0.3);
-}
-
-/* เพิ่มสำหรับมือถือ */
+/* เพิ่มเติมสำหรับมือถือ */
 @media (max-width: 640px) {
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  
-  input, button {
-    font-size: 16px; /* ป้องกันการซูมบนมือถือเมื่อกดที่ input */
-  }
-  
+
   body {
-    background-image: 
-      radial-gradient(circle at 15% 30%, rgba(255, 97, 0, 0.06) 0%, transparent 20%),
-      radial-gradient(circle at 85% 20%, rgba(0, 194, 255, 0.04) 0%, transparent 20%),
-      radial-gradient(circle at 50% 50%, rgba(18, 18, 18, 1) 0%, rgba(10, 10, 10, 1) 100%);
+    background-image:
+      radial-gradient(circle at 15% 30%, rgba(99, 102, 241, 0.06) 0%, transparent 20%),
+      radial-gradient(circle at 85% 20%, rgba(139, 92, 246, 0.04) 0%, transparent 20%),
+      radial-gradient(circle at 50% 50%, rgba(13, 13, 43, 1) 0%, rgba(7, 7, 31, 1) 100%);
   }
-
-  /* จัดการกับการสัมผัสบนมือถือ */
-  .touch-element {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-}
-
-/* เพิ่ม Animation และ Effects สำหรับลูกเล่นต่างๆ */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 97, 0, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(255, 97, 0, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 97, 0, 0); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #1e1e1e;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #3d3d3d;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #ff6100;
-}
-
-/* Todo App Enhanced Styles */
-.todo-app {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-}
-
-.shiny-effect {
-  position: relative;
-  overflow: hidden;
-}
-
-.shiny-effect::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: shimmer 2s infinite;
-  transform: rotate(30deg);
-  pointer-events: none;
-}
-
-.floating-animation {
-  animation: float 6s ease-in-out infinite;
-}
-
-.pulse-animation {
-  animation: pulse 2s infinite;
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-.animate-scaleIn {
-  animation: scaleIn 0.3s ease-out forwards;
-}
-
-/* ปรับปรุงรูปแบบการ์ด */
-.app-card {
-  background-color: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.app-card:hover {
-  border-color: rgba(255, 97, 0, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-}
-
-/* ปรับปรุงปุ่ม */
-button {
-  transition: all 0.2s ease;
-}
-
-button:active {
-  transform: scale(0.96);
-}
-
-/* ปรับปรุงไอคอน */
-.icon-bounce:hover {
-  animation: float 1s ease infinite;
-}
-
-/* Glass Morphism Effect */
-.glass-effect {
-  background: rgba(30, 30, 30, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Custom Checkbox */
-input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 1.2em;
-  height: 1.2em;
-  border-radius: 0.25em;
-  margin-right: 0.5em;
-  border: 1px solid #3d3d3d;
-  background-color: #1e1e1e;
-  display: grid;
-  place-content: center;
-  transition: all 0.2s ease;
-}
-
-input[type="checkbox"]::before {
-  content: "";
-  width: 0.65em;
-  height: 0.65em;
-  transform: scale(0);
-  transition: transform 0.2s ease-in-out;
-  box-shadow: inset 1em 1em #ff6100;
-  transform-origin: center;
-  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-}
-
-input[type="checkbox"]:checked {
-  background-color: #1e1e1e;
-  border-color: #ff6100;
-}
-
-input[type="checkbox"]:checked::before {
-  transform: scale(1);
-}
-
-input[type="checkbox"]:focus {
-  outline: 2px solid rgba(255, 97, 0, 0.5);
-  outline-offset: 2px;
-}
-
-/* Cool focus effects */
-input:focus, button:focus, select:focus, textarea:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 97, 0, 0.5);
-}
-
-/* เพิ่ม Animation และ Effects สำหรับลูกเล่นเพิ่มเติม */
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes scale-bounce {
-  0% { transform: scale(1); }
-  70% { transform: scale(1.07); }
-  100% { transform: scale(1); } 
-}
-
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes slide-up {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* เพิ่ม CSS classes สำหรับ Effects ใหม่ */
-.gradient-text {
-  background: linear-gradient(to right, #ff6100, #ff9a00);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  display: inline-block;
-}
-
-.gradient-border {
-  position: relative;
-  border: 1px solid transparent;
-  background: linear-gradient(#1e1e1e, #1e1e1e) padding-box,
-              linear-gradient(to right, #ff6100, #ff9a00) border-box;
-  border-radius: 12px;
-}
-
-.glow-effect {
-  animation: glow 3s infinite ease-in-out;
-}
-
-.gradient-bg {
-  background: linear-gradient(135deg, #ff6100, #ff9a00, #ffb700, #ff6100);
-  background-size: 300% 300%;
-  animation: gradient-shift 8s ease infinite;
-}
-
-.glassmorphism {
-  background: rgba(30, 30, 30, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.popup-effect {
-  animation: scale-bounce 0.3s forwards;
-}
-
-.rotate-animation {
-  animation: rotate-slow 20s linear infinite;
-}
-
-.slide-up-animation {
-  animation: slide-up 0.5s forwards ease-out;
-}
-
-/* ปรับปรุง Todo Card */
-.todo-card {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.todo-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.todo-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    to bottom, 
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0) 60%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.todo-card:hover::after {
-  opacity: 1;
-}
-
-/* ปรับแต่ง Button styles */
-.button-3d {
-  transition: all 0.2s;
-  transform-style: preserve-3d;
-  transform: perspective(100px) translateZ(0);
-}
-
-.button-3d:hover {
-  transform: perspective(100px) translateZ(5px);
-}
-
-.button-3d:active {
-  transform: perspective(100px) translateZ(2px);
-}
-
-/* Confetti effect container */
-.confetti-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 100;
-}
-
-/* Custom Colored Checkbox */
 .checkbox-custom {
   appearance: none;
   -webkit-appearance: none;
-  background-color: #1e1e1e;
-  border: 2px solid #3d3d3d;
-  border-radius: 4px;
+  background-color: rgba(29, 29, 66, 0.8);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 6px;
   width: 20px;
   height: 20px;
   display: inline-block;
@@ -691,8 +514,8 @@ input:focus, button:focus, select:focus, textarea:focus {
 }
 
 .checkbox-custom:checked {
-  background-color: #ff6100;
-  border-color: #ff6100;
+  background-color: var(--primary);
+  border-color: var(--primary);
 }
 
 .checkbox-custom:checked::after {
@@ -706,141 +529,67 @@ input:focus, button:focus, select:focus, textarea:focus {
 }
 
 .checkbox-custom:hover:not(:checked) {
-  border-color: #ff6100;
+  border-color: var(--primary);
 }
 
-/* Modern badges */
-.badge-modern {
-  padding: 0.2rem 0.6rem;
-  font-size: 0.75rem;
-  border-radius: 9999px;
-  background: rgba(255, 97, 0, 0.15);
-  color: #ff7a30;
-  border: 1px solid rgba(255, 97, 0, 0.3);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  transition: all 0.2s ease;
+/* Todo Item Styling */
+.todo-item {
+  background: linear-gradient(145deg, rgba(13, 13, 43, 0.7), rgba(29, 29, 66, 0.5));
+  border-radius: 12px;
+  border-left-width: 4px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
-.badge-modern:hover {
-  background: rgba(255, 97, 0, 0.25);
-  transform: translateY(-1px);
-}
-
-/* Modern buttons */
-.btn-modern {
-  background: linear-gradient(to right, #ff6100, #ff7a30);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 10px rgba(255, 97, 0, 0.3);
-}
-
-.btn-modern:hover {
-  box-shadow: 0 6px 15px rgba(255, 97, 0, 0.4);
+.todo-item:hover {
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.btn-modern:active {
-  box-shadow: 0 2px 5px rgba(255, 97, 0, 0.2);
-  transform: translateY(0);
+.todo-item.completed {
+  opacity: 0.7;
+  transform: scale(0.98);
 }
 
-.btn-secondary {
-  background: rgba(61, 61, 61, 0.8);
-  color: #e5e5e5;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.btn-secondary:hover {
-  background: rgba(61, 61, 61, 1);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-  transform: translateY(-2px);
-}
-
-/* ไอคอนเมนู */
-.icon-menu {
-  width: 35px;
-  height: 35px;
+/* TodoItem action buttons */
+.todo-action-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  background: linear-gradient(145deg, #1a1a1a, #222);
-  box-shadow: 4px 4px 8px #141414, -4px -4px 8px #2a2a2a;
+  transition: all 0.2s ease;
+  background: rgba(29, 29, 66, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
-.icon-menu:hover {
-  box-shadow: 6px 6px 12px #121212, -6px -6px 12px #2c2c2c;
-  transform: scale(1.1);
+.todo-action-btn:hover {
+  background: rgba(45, 43, 105, 0.6);
+  color: white;
+  transform: translateY(-2px);
 }
 
-.icon-menu:active {
-  box-shadow: inset 4px 4px 8px #141414, inset -4px -4px 8px #2a2a2a;
-  transform: scale(0.95);
-}
-
-/* Text gradient */
-.text-gradient {
-  background-image: linear-gradient(to right, #ff6100, #ff8a00);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-fill-color: transparent;
-}
-
-/* Glass card */
-.glass-card {
-  background: rgba(26, 26, 26, 0.7);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-}
-
-.glass-card:hover {
-  border-color: rgba(255, 97, 0, 0.3);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-/* Typing indicator animation */
-@keyframes typing {
-  0% { width: 0 }
-  50% { width: 100% }
-  100% { width: 0 }
-}
-
-.typing-indicator {
+/* Section titles */
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1rem;
   position: relative;
-  overflow: hidden;
-  display: inline-block;
-  vertical-align: bottom;
+  padding-left: 1rem;
 }
 
-.typing-indicator::after {
-  content: "";
+.section-title::before {
+  content: '';
   position: absolute;
-  right: -2px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 70%;
-  background-color: currentColor;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: var(--primary-gradient);
+  border-radius: 2px;
 }
