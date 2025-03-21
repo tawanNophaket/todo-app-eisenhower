@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+'use client';
+
+import { memo, useCallback, useEffect, useState } from 'react';
 import PomodoroTimer from './PomodoroTimer';
 
 interface TodoItemProps {
@@ -29,7 +31,7 @@ interface TodoItemProps {
   isSubtask?: boolean;
 }
 
-export default function TodoItem({
+function TodoItem({
   id,
   text,
   completed,
@@ -63,47 +65,32 @@ export default function TodoItem({
   const [editedImportance, setEditedImportance] = useState<'high' | 'low'>(importance);
   const [editedUrgency, setEditedUrgency] = useState<'high' | 'low'>(urgency);
   const [editedDueDate, setEditedDueDate] = useState<string | undefined>(dueDate);
-  const [editedReminderDate, setEditedReminderDate] = useState<string | undefined>(reminderDate);
   const [editedCategories, setEditedCategories] = useState<string[]>(categories);
-  const [editedTags, setEditedTags] = useState<string[]>(tags);
-  const [editedStartTime, setEditedStartTime] = useState<string | undefined>(startTime);
-  const [editedEndTime, setEditedEndTime] = useState<string | undefined>(endTime);
-  const [editedIsAllDay, setEditedIsAllDay] = useState<boolean>(isAllDay);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [showExpand, setShowExpand] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
-  // ตรวจสอบขนาดหน้าจอ
+  // อัปเดต state เมื่อ props เปลี่ยน
   useEffect(() => {
-    const checkIfMobile = () => {
-      const mobileView = window.innerWidth < 768;
-      setIsMobile(mobileView);
-      if (mobileView) {
-        setIsExpanded(false);
-      }
-      setShowExpand(!mobileView);
-    };
+    setEditedText(text);
+    setEditedImportance(importance);
+    setEditedUrgency(urgency);
+    setEditedDueDate(dueDate);
+    setEditedCategories(categories);
+  }, [text, importance, urgency, dueDate, categories]);
 
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-
-    return () => window.removeEventListener('resize', checkIfMobile);
+  // จัดการการแสดงปุ่มควบคุม
+  const handleMouseEnter = useCallback(() => {
+    setShowControls(true);
   }, []);
 
-  // เมื่อโฮเวอร์ให้แสดงปุ่มขยาย
-  const handleMouseEnter = () => {
-    if (!isMobile) {
-      setShowExpand(true);
+  const handleMouseLeave = useCallback(() => {
+    if (!isExpanded && !isEditing) {
+      setShowControls(false);
     }
-  };
+  }, [isExpanded, isEditing]);
 
-  const handleMouseLeave = () => {
-    if (!isMobile && !isExpanded) {
-      setShowExpand(false);
-    }
-  };
-
-  const handleEdit = () => {
+  // จัดการการแก้ไข
+  const handleEdit = useCallback(() => {
     if (editedText.trim() === '') return;
     onEdit(
       id,
@@ -111,17 +98,18 @@ export default function TodoItem({
       editedImportance,
       editedUrgency,
       editedDueDate,
-      editedReminderDate,
+      reminderDate,
       editedCategories,
-      editedTags,
-      editedStartTime,
-      editedEndTime,
-      editedIsAllDay
+      tags,
+      startTime,
+      endTime,
+      isAllDay
     );
     setIsEditing(false);
-  };
+  }, [editedText, editedImportance, editedUrgency, editedDueDate, reminderDate, editedCategories, tags, startTime, endTime, isAllDay, id, onEdit]);
 
-  const handleDelete = () => {
+  // จัดการการลบ
+  const handleDelete = useCallback(() => {
     if (isDeleting) {
       onDelete(id);
     } else {
@@ -130,10 +118,10 @@ export default function TodoItem({
         setIsDeleting(false);
       }, 2000);
     }
-  };
+  }, [isDeleting, id, onDelete]);
 
-  // จัดการเมื่อ Pomodoro เสร็จสิ้น
-  const handlePomodoroComplete = (todoId: number, sessionTime: number) => {
+  // จัดการการจับเวลา Pomodoro
+  const handlePomodoroComplete = useCallback((todoId: number, sessionTime: number) => {
     onEdit(
       id,
       text,
@@ -151,10 +139,10 @@ export default function TodoItem({
       efficiency,
       new Date().toISOString()
     );
-  };
+  }, [id, text, importance, urgency, dueDate, reminderDate, categories, tags, startTime, endTime, isAllDay, timeSpent, pomodoroSessions, efficiency, onEdit]);
 
-  // จัดการเมื่อหยุด Pomodoro
-  const handlePomodoroPause = (todoId: number, elapsedTime: number) => {
+  // จัดการการหยุดจับเวลา Pomodoro
+  const handlePomodoroPause = useCallback((todoId: number, elapsedTime: number) => {
     if (elapsedTime > 0) {
       onEdit(
         id,
@@ -174,54 +162,52 @@ export default function TodoItem({
         new Date().toISOString()
       );
     }
-  };
+  }, [id, text, importance, urgency, dueDate, reminderDate, categories, tags, startTime, endTime, isAllDay, timeSpent, pomodoroSessions, efficiency, onEdit]);
 
-  // กำหนดสีของกรอบตามประเภทของงาน
-  const getBorderColor = () => {
+  // กำหนดสีขอบตามประเภทงาน
+  const getBorderColor = useCallback(() => {
     if (completed) return 'border-gray-600';
-    if (quadrant === 1) return 'border-red-500';
-    if (quadrant === 2) return 'border-indigo-500';
-    if (quadrant === 3) return 'border-amber-500';
-    if (quadrant === 4) return 'border-emerald-500';
+    if (quadrant === 1) return 'border-[var(--priority-1)]';
+    if (quadrant === 2) return 'border-[var(--priority-2)]';
+    if (quadrant === 3) return 'border-[var(--priority-3)]';
+    if (quadrant === 4) return 'border-[var(--priority-4)]';
     return 'border-gray-700';
-  };
+  }, [completed, quadrant]);
 
-  // สัญลักษณ์ที่แสดงในแต่ละประเภทงาน
-  const getQuadrantIcon = () => {
+  // ไอคอนประเภทงาน
+  const getQuadrantIcon = useCallback(() => {
     if (quadrant === 1) return '🔥';
     if (quadrant === 2) return '📋';
     if (quadrant === 3) return '⏰';
     if (quadrant === 4) return '🍃';
     return '';
-  };
+  }, [quadrant]);
 
-  // สีและชื่อตามความสำคัญและความเร่งด่วน
-  const getQuadrantInfo = () => {
+  // สีและชื่อตามประเภทงาน
+  const getQuadrantInfo = useCallback(() => {
     if (importance === 'high' && urgency === 'high')
-      return { name: 'ทำทันที', color: 'text-red-500', bgColor: 'bg-red-500', gradient: 'from-red-500 to-red-600' };
+      return { name: 'ทำทันที', color: 'text-[var(--priority-1)]', bgColor: 'bg-[var(--priority-1)]', gradient: 'from-[var(--priority-1)] to-[var(--priority-1)]' };
     if (importance === 'high' && urgency === 'low')
-      return { name: 'วางแผนทำ', color: 'text-indigo-500', bgColor: 'bg-indigo-500', gradient: 'from-indigo-500 to-indigo-600' };
+      return { name: 'วางแผนทำ', color: 'text-[var(--priority-2)]', bgColor: 'bg-[var(--priority-2)]', gradient: 'from-[var(--priority-2)] to-[var(--priority-2)]' };
     if (importance === 'low' && urgency === 'high')
-      return { name: 'มอบหมาย', color: 'text-amber-500', bgColor: 'bg-amber-500', gradient: 'from-amber-500 to-amber-600' };
+      return { name: 'มอบหมาย', color: 'text-[var(--priority-3)]', bgColor: 'bg-[var(--priority-3)]', gradient: 'from-[var(--priority-3)] to-[var(--priority-3)]' };
     if (importance === 'low' && urgency === 'low')
-      return { name: 'ตัดทิ้ง', color: 'text-emerald-500', bgColor: 'bg-emerald-500', gradient: 'from-emerald-500 to-emerald-600' };
+      return { name: 'ตัดทิ้ง', color: 'text-[var(--priority-4)]', bgColor: 'bg-[var(--priority-4)]', gradient: 'from-[var(--priority-4)] to-[var(--priority-4)]' };
     return { name: '', color: 'text-gray-400', bgColor: 'bg-gray-500', gradient: 'from-gray-500 to-gray-600' };
-  };
+  }, [importance, urgency]);
 
-  // ฟอร์แมตเวลาในรูปแบบที่อ่านง่าย
-  const formatTime = (seconds: number) => {
+  // แปลงเวลาเป็นรูปแบบที่อ่านง่าย
+  const formatTime = useCallback((seconds: number) => {
     if (seconds < 60) return `${seconds} วินาที`;
-
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes} นาที`;
-
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return `${hours} ชั่วโมง ${remainingMinutes} นาที`;
-  };
+    return `${hours} ชั่วโมง ${remainingMinutes > 0 ? `${remainingMinutes} นาที` : ''}`;
+  }, []);
 
-  // ฟอร์แมตวันที่ให้อ่านง่าย
-  const formatDate = (dateStr?: string) => {
+  // แปลงวันที่เป็นรูปแบบที่อ่านง่าย
+  const formatDate = useCallback((dateStr?: string) => {
     if (!dateStr) return null;
     const date = new Date(dateStr);
     return date.toLocaleString('th-TH', {
@@ -231,16 +217,16 @@ export default function TodoItem({
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
+  }, []);
 
-  // ตรวจสอบว่าเลยกำหนดหรือไม่
-  const isOverdue = () => {
+  // ตรวจสอบว่าวันที่เลยกำหนดหรือไม่
+  const isOverdue = useCallback(() => {
     if (!dueDate || completed) return false;
     return new Date(dueDate) < new Date();
-  };
+  }, [dueDate, completed]);
 
   // คำนวณเวลาที่เหลือ
-  const getTimeRemaining = () => {
+  const getTimeRemaining = useCallback(() => {
     if (!dueDate) return '';
 
     const now = new Date();
@@ -268,17 +254,16 @@ export default function TodoItem({
     } else {
       return `อีก ${diffDays} วัน`;
     }
-  };
+  }, [dueDate, completed]);
 
-  // ฟังก์ชั่นเพื่อกำหนดสีของเวลาที่เหลือตามความเร่งด่วน
-  const getTimeRemainingColor = () => {
+  // กำหนดสีของเวลาที่เหลือตามความเร่งด่วน
+  const getTimeRemainingColor = useCallback(() => {
     if (!dueDate) return '';
-
     const now = new Date();
     const due = new Date(dueDate);
 
     if (due < now && !completed) {
-      return 'text-red-500';
+      return 'text-[var(--priority-1)]';
     }
 
     const diffTime = due.getTime() - now.getTime();
@@ -287,28 +272,29 @@ export default function TodoItem({
     if (diffDays === 0) {
       const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
       if (diffHours === 0) {
-        return 'text-red-500';
+        return 'text-[var(--priority-1)]';
       }
-      return 'text-amber-500';
+      return 'text-[var(--priority-3)]';
     } else if (diffDays <= 3) {
-      return 'text-amber-400';
+      return 'text-[var(--priority-3)]';
     } else {
-      return 'text-emerald-400';
+      return 'text-[var(--priority-4)]';
     }
-  };
+  }, [dueDate, completed]);
 
+  // หากกำลังแก้ไข ให้แสดงฟอร์มแก้ไข
   if (isEditing) {
     return (
       <div
         id={`todo-${id}`}
-        className="glass-card p-5 my-4 shadow-lg animate-fadeIn"
+        className="app-card p-4 my-3 shadow-lg animate-fadeIn"
       >
         <h3 className="text-lg font-medium mb-4 text-gradient-purple">แก้ไขรายการ</h3>
 
         <input
           value={editedText}
           onChange={(e) => setEditedText(e.target.value)}
-          className="w-full p-3 mb-4 bg-gray-800/40 text-white text-sm rounded-lg border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
+          className="w-full p-3 mb-4 bg-[var(--gray-medium)] text-white text-sm rounded-lg border border-[var(--gray-light)] focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] outline-none transition-all"
           autoFocus
           placeholder="รายละเอียดงาน..."
         />
@@ -318,28 +304,36 @@ export default function TodoItem({
           <div className="grid grid-cols-2 gap-3 mb-2">
             <button
               onClick={() => { setEditedImportance('high'); setEditedUrgency('high'); }}
-              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'high' && editedUrgency === 'high' ? 'bg-gradient-to-br from-red-500 to-red-600 text-white' : 'bg-gray-800/40 text-gray-300 border border-gray-700'}`}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'high' && editedUrgency === 'high'
+                ? 'bg-gradient-to-br from-[var(--priority-1)] to-[var(--priority-1)] text-white'
+                : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
             >
               <span className="text-lg">🔥</span>
               <span>ทำทันที</span>
             </button>
             <button
               onClick={() => { setEditedImportance('high'); setEditedUrgency('low'); }}
-              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'high' && editedUrgency === 'low' ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white' : 'bg-gray-800/40 text-gray-300 border border-gray-700'}`}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'high' && editedUrgency === 'low'
+                ? 'bg-gradient-to-br from-[var(--priority-2)] to-[var(--priority-2)] text-white'
+                : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
             >
               <span className="text-lg">📋</span>
               <span>วางแผนทำ</span>
             </button>
             <button
               onClick={() => { setEditedImportance('low'); setEditedUrgency('high'); }}
-              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'low' && editedUrgency === 'high' ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white' : 'bg-gray-800/40 text-gray-300 border border-gray-700'}`}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'low' && editedUrgency === 'high'
+                ? 'bg-gradient-to-br from-[var(--priority-3)] to-[var(--priority-3)] text-white'
+                : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
             >
               <span className="text-lg">⏰</span>
               <span>มอบหมาย</span>
             </button>
             <button
               onClick={() => { setEditedImportance('low'); setEditedUrgency('low'); }}
-              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'low' && editedUrgency === 'low' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white' : 'bg-gray-800/40 text-gray-300 border border-gray-700'}`}
+              className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${editedImportance === 'low' && editedUrgency === 'low'
+                ? 'bg-gradient-to-br from-[var(--priority-4)] to-[var(--priority-4)] text-white'
+                : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
             >
               <span className="text-lg">🍃</span>
               <span>ตัดทิ้ง</span>
@@ -353,48 +347,14 @@ export default function TodoItem({
             type="datetime-local"
             value={editedDueDate || ''}
             onChange={(e) => setEditedDueDate(e.target.value)}
-            className="w-full p-3 mb-3 bg-gray-800/40 text-white text-sm rounded-lg border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
+            className="w-full p-3 mb-3 bg-[var(--gray-medium)] text-white text-sm rounded-lg border border-[var(--gray-light)] focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] outline-none transition-all"
           />
-
-          <div className="flex items-center mb-3">
-            <input
-              type="checkbox"
-              id={`all-day-${id}`}
-              checked={editedIsAllDay}
-              onChange={(e) => setEditedIsAllDay(e.target.checked)}
-              className="checkbox-custom"
-            />
-            <label htmlFor={`all-day-${id}`} className="text-sm text-gray-300 ml-2">ทั้งวัน</label>
-          </div>
-
-          {!editedIsAllDay && (
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              <div>
-                <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น</div>
-                <input
-                  type="time"
-                  value={editedStartTime || ''}
-                  onChange={(e) => setEditedStartTime(e.target.value)}
-                  className="w-full p-3 bg-gray-800/40 text-white text-sm rounded-lg border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด</div>
-                <input
-                  type="time"
-                  value={editedEndTime || ''}
-                  onChange={(e) => setEditedEndTime(e.target.value)}
-                  className="w-full p-3 bg-gray-800/40 text-white text-sm rounded-lg border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="flex gap-3 mt-6">
           <button
             onClick={handleEdit}
-            className="btn-modern flex-1 flex items-center justify-center gap-2"
+            className="app-button app-button-primary flex-1 flex items-center justify-center gap-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -403,7 +363,7 @@ export default function TodoItem({
           </button>
           <button
             onClick={() => setIsEditing(false)}
-            className="btn-secondary px-4 py-3 flex items-center justify-center gap-2"
+            className="app-button app-button-secondary px-4 py-3 flex items-center justify-center gap-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -462,33 +422,26 @@ export default function TodoItem({
                 </span>
               )}
 
-              {categories.length > 0 && categories.map((category, index) => (
+              {categories.length > 0 && categories.slice(0, 2).map((category, index) => (
                 <span key={index} className="category-chip text-xs">
                   {category}
                 </span>
               ))}
 
-              {tags.length > 0 && tags.map((tag, index) => (
-                <span key={index} className="badge-modern text-xs">
-                  #{tag}
+              {categories.length > 2 && (
+                <span className="category-chip text-xs">
+                  +{categories.length - 2}
                 </span>
-              ))}
+              )}
             </div>
 
             {/* แสดงรายละเอียดเมื่อคลิกขยาย */}
             {isExpanded && (
               <div className="mt-3 pl-1 pt-3 border-t border-gray-700/50 text-sm space-y-2 animate-fadeIn">
                 {dueDate && (
-                  <div className={`${isOverdue() ? 'text-red-400' : 'text-gray-300'}`}>
+                  <div className={`${isOverdue() ? 'text-[var(--priority-1)]' : 'text-gray-300'}`}>
                     <span className="font-medium mr-1">กำหนด:</span>
                     <span>{formatDate(dueDate)}</span>
-                  </div>
-                )}
-
-                {reminderDate && (
-                  <div className="text-gray-300">
-                    <span className="font-medium mr-1">แจ้งเตือน:</span>
-                    <span>{formatDate(reminderDate)}</span>
                   </div>
                 )}
 
@@ -511,12 +464,26 @@ export default function TodoItem({
                       <span className="mr-2">{efficiency}/10</span>
                       <div className="w-20 h-2 bg-gray-700 rounded-full">
                         <div
-                          className={`h-2 rounded-full ${efficiency >= 7 ? 'bg-emerald-500' :
-                            efficiency >= 4 ? 'bg-amber-500' : 'bg-red-500'
+                          className={`h-2 rounded-full ${efficiency >= 7 ? 'bg-[var(--priority-4)]' :
+                            efficiency >= 4 ? 'bg-[var(--priority-3)]' : 'bg-[var(--priority-1)]'
                             }`}
                           style={{ width: `${efficiency * 10}%` }}
                         />
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* แสดงรายละเอียดหมวดหมู่ */}
+                {categories.length > 0 && (
+                  <div className="text-gray-300">
+                    <span className="font-medium mr-1">หมวดหมู่:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {categories.map((category, index) => (
+                        <span key={index} className="category-chip text-xs">
+                          {category}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -526,7 +493,7 @@ export default function TodoItem({
         </div>
 
         {/* ปุ่มจัดการ */}
-        <div className="flex space-x-1 ml-1">
+        <div className={`flex space-x-1 ml-1 transition-opacity duration-200 ${showControls ? 'opacity-100' : 'opacity-0 md:opacity-100'}`}>
           <button
             onClick={() => setShowPomodoro(!showPomodoro)}
             className="todo-action-btn"
@@ -536,16 +503,14 @@ export default function TodoItem({
             {showPomodoro ? '⏱️' : '🍅'}
           </button>
 
-          {(showExpand || isExpanded) && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="todo-action-btn"
-              aria-label={isExpanded ? 'ย่อ' : 'ขยาย'}
-              title={isExpanded ? 'ย่อ' : 'ขยาย'}
-            >
-              {isExpanded ? '▲' : '▼'}
-            </button>
-          )}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="todo-action-btn"
+            aria-label={isExpanded ? 'ย่อ' : 'ขยาย'}
+            title={isExpanded ? 'ย่อ' : 'ขยาย'}
+          >
+            {isExpanded ? '▲' : '▼'}
+          </button>
 
           <button
             onClick={() => setIsEditing(true)}
@@ -569,7 +534,7 @@ export default function TodoItem({
 
           <button
             onClick={handleDelete}
-            className={`todo-action-btn ${isDeleting ? 'bg-red-500/80 text-white' : ''}`}
+            className={`todo-action-btn ${isDeleting ? 'bg-[var(--priority-1)]/80 text-white' : ''}`}
             aria-label={isDeleting ? 'ยืนยันการลบ' : 'ลบ'}
             title={isDeleting ? 'ยืนยันการลบ' : 'ลบ'}
           >
@@ -581,7 +546,7 @@ export default function TodoItem({
       {/* แสดงสถานะงานย่อยถ้ามี */}
       {hasChildTasks && (
         <div className="mt-2 ml-4 text-sm flex items-center">
-          <span className="inline-flex items-center text-indigo-400 font-medium">
+          <span className="inline-flex items-center text-[var(--primary-color)] font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
@@ -604,3 +569,6 @@ export default function TodoItem({
     </li>
   );
 }
+
+// ใช้ memo เพื่อป้องกันการเรนเดอร์ซ้ำที่ไม่จำเป็น
+export default memo(TodoItem);

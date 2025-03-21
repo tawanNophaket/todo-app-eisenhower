@@ -1,163 +1,125 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { scheduleNotification } from '../utils/notificationManager';
-import Header from './Header';
-import NotificationManager from './NotificationManager';
 import TodoItem from './TodoItem';
 
 interface Todo {
   id: number;
   text: string;
   completed: boolean;
-  importance: 'high' | 'low'; // สำคัญหรือไม่สำคัญ
-  urgency: 'high' | 'low';    // เร่งด่วนหรือไม่เร่งด่วน
+  importance: 'high' | 'low';
+  urgency: 'high' | 'low';
   dueDate?: string;
   reminderDate?: string;
-  categories: string[];       // หมวดหมู่ เช่น งานส่วนตัว, งานบ้าน, การเรียน
-  tags: string[];             // แท็กผู้ใช้กำหนดเอง
-  startTime?: string;         // เวลาเริ่มต้น
-  endTime?: string;           // เวลาสิ้นสุด
-  isAllDay?: boolean;         // เป็นงานทั้งวันหรือไม่
-  timeSpent?: number;         // เวลาที่ใช้ไปในหน่วยวินาที
-  pomodoroSessions?: number;  // จำนวนเซสชัน Pomodoro ที่ใช้
-  efficiency?: number;        // คะแนนประสิทธิภาพ (1-10)
-  lastPomodoroDate?: string;  // วันที่ทำ Pomodoro ล่าสุด
-  parentId?: number;          // เพิ่มสำหรับระบุว่าเป็นงานย่อยของงานไหน
-  subtasks?: number[];        // เพิ่มเพื่อเก็บ id ของงานย่อย
-  priority?: number;          // ลำดับความสำคัญของงาน (1-5)
+  categories: string[];
+  tags: string[];
+  startTime?: string;
+  endTime?: string;
+  isAllDay?: boolean;
+  timeSpent?: number;
+  pomodoroSessions?: number;
+  efficiency?: number;
+  lastPomodoroDate?: string;
+  parentId?: number;
+  subtasks?: number[];
 }
 
 export default function Todo() {
+  // State
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const [newImportance, setNewImportance] = useState<'high' | 'low'>('high');
   const [newUrgency, setNewUrgency] = useState<'high' | 'low'>('high');
   const [newDueDate, setNewDueDate] = useState<string | undefined>(undefined);
-  const [newReminderDate, setNewReminderDate] = useState<string | undefined>(undefined);
   const [newCategories, setNewCategories] = useState<string[]>([]);
-  const [newTags, setNewTags] = useState<string[]>([]);
-  const [newStartTime, setNewStartTime] = useState<string | undefined>(undefined);
-  const [newEndTime, setNewEndTime] = useState<string | undefined>(undefined);
-  const [newIsAllDay, setNewIsAllDay] = useState<boolean>(false);
-  const [newPriority, setNewPriority] = useState<number>(3); // ค่าเริ่มต้นที่ 3 (ปานกลาง)
   const [categories, setCategories] = useState<string[]>(['งานส่วนตัว', 'งานบ้าน', 'การเรียน', 'งานอื่นๆ']);
-  const [tags, setTags] = useState<string[]>([]);
-  const [newTagInput, setNewTagInput] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [activeQuadrant, setActiveQuadrant] = useState<number>(0); // 0 = ทั้งหมด, 1-4 = quadrants
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showStatistics, setShowStatistics] = useState(false);
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'completed', 'active'
+  const [activeTab, setActiveTab] = useState('all');
+  const [activeQuadrant, setActiveQuadrant] = useState<number>(0);
 
-  // โหลดข้อมูล todos, categories และ tags จาก localStorage เมื่อ component โหลดครั้งแรก
+  // โหลดข้อมูลจาก localStorage
   useEffect(() => {
-    setIsLoading(true);
+    const loadData = async () => {
+      try {
+        // ใช้โหลดแบบคู่ขนานเพื่อความเร็ว
+        const [todosData, categoriesData] = await Promise.all([
+          localStorage.getItem('todos'),
+          localStorage.getItem('categories')
+        ]);
 
-    // จำลองการโหลดข้อมูลช้าๆ เพื่อแสดง loading state
-    setTimeout(() => {
-      const savedTodos = localStorage.getItem('todos');
-      const savedCategories = localStorage.getItem('categories');
-      const savedTags = localStorage.getItem('tags');
+        if (todosData) {
+          const parsedTodos = JSON.parse(todosData);
+          setTodos(parsedTodos);
 
-      if (savedTodos) {
-        const parsedTodos = JSON.parse(savedTodos);
-        // แปลงข้อมูลเก่าให้มีฟิลด์ใหม่ถ้าจำเป็น
-        const updatedTodos = parsedTodos.map((todo: any) => ({
-          ...todo,
-          categories: todo.categories && Array.isArray(todo.categories) ? todo.categories : [],
-          tags: todo.tags && Array.isArray(todo.tags) ? todo.tags : []
-        }));
-        setTodos(updatedTodos);
-
-        // ตรวจสอบการแจ้งเตือนสำหรับรายการที่มีกำหนดการแจ้งเตือน
-        updatedTodos.forEach((todo: Todo) => {
-          if (todo.reminderDate && !todo.completed) {
-            scheduleReminderNotification(todo);
+          // ตั้งเวลาการแจ้งเตือนสำหรับงานที่ยังไม่เสร็จและมีการตั้งเวลาแจ้งเตือน
+          if (notificationPermission === 'granted') {
+            parsedTodos.forEach((todo: Todo) => {
+              if (todo.reminderDate && !todo.completed) {
+                scheduleReminderNotification(todo);
+              }
+            });
           }
-        });
-      }
-
-      if (savedCategories) {
-        try {
-          const parsedCategories = JSON.parse(savedCategories);
-          if (Array.isArray(parsedCategories)) {
-            setCategories(parsedCategories);
-          } else {
-            console.error('Saved categories is not an array:', parsedCategories);
-            setCategories(['งานส่วนตัว', 'งานบ้าน', 'การเรียน', 'งานอื่นๆ']);
-          }
-        } catch (error) {
-          console.error('Error parsing saved categories:', error);
-          setCategories(['งานส่วนตัว', 'งานบ้าน', 'การเรียน', 'งานอื่นๆ']);
         }
-      }
 
-      if (savedTags) {
-        try {
-          const parsedTags = JSON.parse(savedTags);
-          if (Array.isArray(parsedTags)) {
-            setTags(parsedTags);
-          } else {
-            console.error('Saved tags is not an array:', parsedTags);
-            setTags([]);
+        if (categoriesData) {
+          try {
+            const parsedCategories = JSON.parse(categoriesData);
+            if (Array.isArray(parsedCategories)) {
+              setCategories(parsedCategories);
+            }
+          } catch (error) {
+            console.error('Error parsing categories:', error);
           }
-        } catch (error) {
-          console.error('Error parsing saved tags:', error);
-          setTags([]);
         }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setIsLoading(false);
-    }, 800);
-  }, []);
+    loadData();
+  }, [notificationPermission]);
 
-  // บันทึกข้อมูล todos, categories และ tags ลง localStorage ทุกครั้งที่มีการเปลี่ยนแปลง
+  // บันทึกข้อมูลใน localStorage เมื่อ todos เปลี่ยนแปลง
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem('todos', JSON.stringify(todos));
+    if (!loading) {
+      // ใช้ debounce เพื่อลดการบันทึกข้อมูลบ่อยเกินไป
+      const saveTimeout = setTimeout(() => {
+        localStorage.setItem('todos', JSON.stringify(todos));
+      }, 500);
+
+      return () => clearTimeout(saveTimeout);
     }
-  }, [todos, isLoading]);
+  }, [todos, loading]);
 
+  // บันทึกข้อมูลหมวดหมู่
   useEffect(() => {
-    if (!isLoading) {
+    if (!loading) {
       localStorage.setItem('categories', JSON.stringify(categories));
     }
-  }, [categories, isLoading]);
+  }, [categories, loading]);
 
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem('tags', JSON.stringify(tags));
-    }
-  }, [tags, isLoading]);
-
-  // ฟังก์ชั่นสำหรับตั้งเวลาแจ้งเตือน
-  const scheduleReminderNotification = (todo: Todo) => {
-    if (!todo.reminderDate || !notificationPermission || notificationPermission !== 'granted') return;
+  // ตั้งเวลาแจ้งเตือน
+  const scheduleReminderNotification = useCallback((todo: Todo) => {
+    if (!todo.reminderDate || notificationPermission !== 'granted') return;
 
     const reminderTime = new Date(todo.reminderDate);
-
-    // ตรวจสอบว่ารายการมีกำหนดเวลาการแจ้งเตือนในอนาคตหรือไม่
     if (reminderTime > new Date()) {
       scheduleNotification(
         'แจ้งเตือนรายการที่ต้องทำ',
         `"${todo.text}" ถึงกำหนดแล้ว`,
         reminderTime,
-        todo.id,
-        {
-          data: {
-            todoId: todo.id,
-            url: window.location.href
-          }
-        }
+        todo.id
       );
     }
-  };
+  }, [notificationPermission]);
 
-  const addTodo = () => {
+  // เพิ่มรายการใหม่
+  const addTodo = useCallback(() => {
     if (newTodo.trim() === '') return;
 
     const newItem: Todo = {
@@ -167,46 +129,47 @@ export default function Todo() {
       importance: newImportance,
       urgency: newUrgency,
       dueDate: newDueDate,
-      reminderDate: newReminderDate,
       categories: newCategories,
-      tags: newTags,
-      startTime: newStartTime,
-      endTime: newEndTime,
-      isAllDay: newIsAllDay,
-      priority: newPriority
+      tags: []
     };
 
-    setTodos([...todos, newItem]);
+    setTodos(prevTodos => [...prevTodos, newItem]);
+
+    // รีเซ็ตฟอร์ม
     setNewTodo('');
     setNewDueDate(undefined);
-    setNewReminderDate(undefined);
     setNewCategories([]);
-    setNewTags([]);
-    setNewStartTime(undefined);
-    setNewEndTime(undefined);
-    setNewIsAllDay(false);
 
-    // ตั้งค่าการแจ้งเตือนหากมีการกำหนด
-    if (newReminderDate && notificationPermission === 'granted') {
+    // ตั้งการแจ้งเตือนถ้ามีกำหนดเวลา
+    if (newItem.reminderDate && notificationPermission === 'granted') {
       scheduleReminderNotification(newItem);
     }
-  };
 
-  const toggleTodo = (id: number) => {
-    setTodos(
-      todos.map(todo =>
+    setShowAddModal(false);
+  }, [newTodo, newImportance, newUrgency, newDueDate, newCategories, notificationPermission, scheduleReminderNotification]);
+
+  // สลับสถานะงาน (ทำแล้ว/ยังไม่ได้ทำ)
+  const toggleTodo = useCallback((id: number) => {
+    setTodos(prevTodos =>
+      prevTodos.map(todo =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
       )
     );
-  };
+  }, []);
 
-  const deleteTodo = (id: number) => {
-    setTodos(todos.filter(todo => todo.id !== id));
-  };
+  // ลบรายการ
+  const deleteTodo = useCallback((id: number) => {
+    setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
+  }, []);
 
-  const editTodo = (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean, timeSpent?: number, pomodoroSessions?: number, efficiency?: number, lastPomodoroDate?: string) => {
-    setTodos(
-      todos.map(todo => {
+  // แก้ไขรายการ
+  const editTodo = useCallback((id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low',
+    dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[],
+    startTime?: string, endTime?: string, isAllDay?: boolean, timeSpent?: number,
+    pomodoroSessions?: number, efficiency?: number, lastPomodoroDate?: string) => {
+
+    setTodos(prevTodos =>
+      prevTodos.map(todo => {
         if (todo.id === id) {
           const updatedTodo = {
             ...todo,
@@ -236,256 +199,19 @@ export default function Todo() {
         return todo;
       })
     );
-  };
+  }, [notificationPermission, scheduleReminderNotification]);
 
-  const clearCompleted = () => {
-    setTodos(todos.filter(todo => !todo.completed));
-  };
+  // ลบงานที่เสร็จแล้วทั้งหมด
+  const clearCompleted = useCallback(() => {
+    setTodos(prevTodos => prevTodos.filter(todo => !todo.completed));
+  }, []);
 
-  // ฟังก์ชันเพิ่มหมวดหมู่ใหม่
-  const addCategory = (category: string) => {
-    if (category.trim() === '' || categories.includes(category)) return;
-    setCategories([...categories, category]);
-  };
-
-  // ฟังก์ชันเพิ่มแท็กใหม่
-  const addTag = (tag: string) => {
-    if (tag.trim() === '' || tags.includes(tag)) return;
-    setTags([...tags, tag]);
-    setNewTagInput('');
-  };
-
-  // ฟังก์ชันลบหมวดหมู่
-  const removeCategory = (category: string) => {
-    setCategories(categories.filter(c => c !== category));
-    // ลบหมวดหมู่นี้ออกจากทุกรายการ
-    setTodos(todos.map(todo => ({
-      ...todo,
-      categories: todo.categories.filter(c => c !== category)
-    })));
-    if (activeCategory === category) {
-      setActiveCategory(null);
-    }
-  };
-
-  // ฟังก์ชันลบแท็ก
-  const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
-    // ลบแท็กนี้ออกจากทุกรายการ
-    setTodos(todos.map(todo => ({
-      ...todo,
-      tags: todo.tags.filter(t => t !== tag)
-    })));
-    if (activeTag === tag) {
-      setActiveTag(null);
-    }
-  };
-
-  // ฟังก์ชันกรองรายการตามหมวดหมู่และแท็ก
-  const getFilteredTodos = () => {
-    let filteredTodos = todos;
-
-    if (activeCategory) {
-      filteredTodos = filteredTodos.filter(todo =>
-        todo.categories.includes(activeCategory)
-      );
-    }
-
-    if (activeTag) {
-      filteredTodos = filteredTodos.filter(todo =>
-        todo.tags.includes(activeTag)
-      );
-    }
-
-    if (activeQuadrant > 0) {
-      switch (activeQuadrant) {
-        case 1: // สำคัญและเร่งด่วน
-          filteredTodos = filteredTodos.filter(todo =>
-            todo.importance === 'high' && todo.urgency === 'high'
-          );
-          break;
-        case 2: // สำคัญแต่ไม่เร่งด่วน
-          filteredTodos = filteredTodos.filter(todo =>
-            todo.importance === 'high' && todo.urgency === 'low'
-          );
-          break;
-        case 3: // เร่งด่วนแต่ไม่สำคัญ
-          filteredTodos = filteredTodos.filter(todo =>
-            todo.importance === 'low' && todo.urgency === 'high'
-          );
-          break;
-        case 4: // ไม่สำคัญและไม่เร่งด่วน
-          filteredTodos = filteredTodos.filter(todo =>
-            todo.importance === 'low' && todo.urgency === 'low'
-          );
-          break;
-      }
-    }
-
-    // เรียงลำดับรายการตามวันที่ส่งและความสำคัญ
-    return sortTodos(filteredTodos);
-  };
-
-  // ฟังก์ชันเรียงลำดับรายการตามวันที่ส่งและความสำคัญ
-  const sortTodos = (todosList: Todo[]) => {
-    return [...todosList].sort((a, b) => {
-      // เรียงงานที่ยังไม่เสร็จไว้ก่อน
-      if (a.completed !== b.completed) {
-        return a.completed ? 1 : -1;
-      }
-
-      // เรียงตามกำหนดส่ง - งานที่มีกำหนดส่งเร็วกว่าจะอยู่ก่อน
-      if (a.dueDate && b.dueDate) {
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      } else if (a.dueDate) {
-        return -1; // งานที่มีกำหนดส่งอยู่ก่อนงานที่ไม่มีกำหนดส่ง
-      } else if (b.dueDate) {
-        return 1;
-      }
-
-      // เรียงตามความสำคัญ (สำคัญมากอยู่ก่อน)
-      if (a.importance !== b.importance) {
-        return a.importance === 'high' ? -1 : 1;
-      }
-
-      // เรียงตามความเร่งด่วน (เร่งด่วนอยู่ก่อน)
-      if (a.urgency !== b.urgency) {
-        return a.urgency === 'high' ? -1 : 1;
-      }
-
-      // ถ้าทุกอย่างเท่ากัน ให้เรียงตามเวลาสร้าง (ใหม่สุดอยู่ก่อน)
-      return b.id - a.id;
-    });
-  };
-
-  // แบ่งงานตาม Eisenhower Matrix
-  const getQuadrantTodos = (quadrant: number) => {
-    let quadrantTodos;
-    switch (quadrant) {
-      case 1: // สำคัญและเร่งด่วน (Urgent & Important)
-        quadrantTodos = todos.filter(todo => todo.importance === 'high' && todo.urgency === 'high');
-        break;
-      case 2: // สำคัญแต่ไม่เร่งด่วน (Important but Not Urgent)
-        quadrantTodos = todos.filter(todo => todo.importance === 'high' && todo.urgency === 'low');
-        break;
-      case 3: // เร่งด่วนแต่ไม่สำคัญ (Urgent but Not Important)
-        quadrantTodos = todos.filter(todo => todo.importance === 'low' && todo.urgency === 'high');
-        break;
-      case 4: // ไม่สำคัญและไม่เร่งด่วน (Not Urgent & Not Important)
-        quadrantTodos = todos.filter(todo => todo.importance === 'low' && todo.urgency === 'low');
-        break;
-      default:
-        quadrantTodos = todos;
-        break;
-    }
-    return sortTodos(quadrantTodos);
-  };
-
-  // คัดแยกงานที่เสร็จแล้วและยังไม่เสร็จ
-  const pendingTasks = todos.filter(todo => !todo.completed).length;
-  const completedTasks = todos.filter(todo => todo.completed).length;
-
-  // คำนวณเปอร์เซ็นต์ความสำเร็จ
-  const completionPercentage = todos.length > 0
-    ? Math.round((completedTasks / todos.length) * 100)
-    : 0;
-
-  // เพิ่มฟังก์ชันสำหรับ due dates
-  // คำนวณวันที่ใกล้ครบกำหนด (ภายใน 3 วัน)
-  const getDueSoonTodos = () => {
-    const now = new Date();
-    const threeDaysLater = new Date();
-    threeDaysLater.setDate(now.getDate() + 3);
-
-    return todos
-      .filter(todo => {
-        if (!todo.dueDate || todo.completed) return false;
-        const dueDate = new Date(todo.dueDate);
-        return dueDate <= threeDaysLater;
-      })
-      .map(todo => {
-        const dueDate = new Date(todo.dueDate!);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const diffTime = dueDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        const quadrant =
-          todo.importance === 'high' && todo.urgency === 'high' ? 1 :
-            todo.importance === 'high' && todo.urgency === 'low' ? 2 :
-              todo.importance === 'low' && todo.urgency === 'high' ? 3 : 4;
-
-        return {
-          ...todo,
-          daysLeft: diffDays,
-          quadrant
-        };
-      })
-      .sort((a, b) => a.daysLeft - b.daysLeft);
-  };
-
-  const dueSoonTodos = getDueSoonTodos();
-
-  // ฟังก์ชันจัดการการเปลี่ยนแปลงสิทธิ์การแจ้งเตือน
-  const handlePermissionChange = (permission: NotificationPermission) => {
-    setNotificationPermission(permission);
-  };
-
-  // ให้คะแนนประสิทธิภาพ
-  const rateEfficiency = (todoId: number, efficiency: number) => {
-    editTodo(
-      todoId,
-      todos.find(todo => todo.id === todoId)?.text || '',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      efficiency
-    );
-  };
-
-  // คำนวณเวลาที่ใช้ในแต่ละหมวดหมู่
-  const getCategoryTimes = () => {
-    const categoryTimes: Record<string, number> = {};
-
-    todos.forEach(todo => {
-      if (todo.timeSpent && todo.timeSpent > 0) {
-        todo.categories.forEach(category => {
-          if (!categoryTimes[category]) {
-            categoryTimes[category] = 0;
-          }
-          // กระจายเวลาตามจำนวนหมวดหมู่
-          categoryTimes[category] += (todo.timeSpent || 0) / todo.categories.length;
-        });
-      }
-    });
-
-    return categoryTimes;
-  };
-
-  // คำนวณประสิทธิภาพเฉลี่ย
-  const getAverageEfficiency = () => {
-    const todosWithEfficiency = todos.filter(todo => todo.efficiency !== undefined);
-    if (todosWithEfficiency.length === 0) return 0;
-
-    const sum = todosWithEfficiency.reduce((acc, todo) => acc + (todo.efficiency || 0), 0);
-    return sum / todosWithEfficiency.length;
-  };
-
-  // เพิ่มฟังก์ชันสำหรับการจัดการงานย่อย
-  const addSubtask = (parentId: number) => {
+  // เพิ่มงานย่อย
+  const addSubtask = useCallback((parentId: number) => {
     const parent = todos.find(todo => todo.id === parentId);
     if (!parent) return;
 
-    const newId = Math.max(0, ...todos.map(t => t.id)) + 1;
+    const newId = Date.now();
     const newSubtask: Todo = {
       id: newId,
       text: 'งานย่อยใหม่',
@@ -493,178 +219,202 @@ export default function Todo() {
       importance: parent.importance,
       urgency: parent.urgency,
       categories: [...parent.categories],
-      tags: [...parent.tags],
-      parentId: parentId,
-      subtasks: [],
-      priority: parent.priority
+      tags: [],
+      parentId: parentId
     };
 
-    // อัปเดตรายการงานและเพิ่ม ID ของงานย่อยในงานหลัก
-    const updatedTodos = todos.map(todo => {
-      if (todo.id === parentId) {
-        return {
-          ...todo,
-          subtasks: [...(todo.subtasks || []), newId]
-        };
-      }
-      return todo;
+    setTodos(prevTodos => {
+      const updatedTodos = prevTodos.map(todo => {
+        if (todo.id === parentId) {
+          return {
+            ...todo,
+            subtasks: [...(todo.subtasks || []), newId]
+          };
+        }
+        return todo;
+      });
+
+      return [...updatedTodos, newSubtask];
     });
+  }, [todos]);
 
-    setTodos([...updatedTodos, newSubtask]);
-    localStorage.setItem('todos', JSON.stringify([...updatedTodos, newSubtask]));
-  };
-
-  const deleteSubtask = (id: number) => {
+  // ลบงานย่อย
+  const deleteSubtask = useCallback((id: number) => {
     const subtask = todos.find(todo => todo.id === id);
     if (!subtask || !subtask.parentId) return;
 
-    // อัปเดตรายการงานย่อยในงานหลัก
-    const updatedTodos = todos.map(todo => {
-      if (todo.id === subtask.parentId) {
-        return {
-          ...todo,
-          subtasks: (todo.subtasks || []).filter(subId => subId !== id)
-        };
-      }
-      return todo;
-    }).filter(todo => todo.id !== id); // ลบงานย่อย
+    setTodos(prevTodos => {
+      const updatedTodos = prevTodos.map(todo => {
+        if (todo.id === subtask.parentId) {
+          return {
+            ...todo,
+            subtasks: (todo.subtasks || []).filter(subId => subId !== id)
+          };
+        }
+        return todo;
+      }).filter(todo => todo.id !== id);
 
-    setTodos(updatedTodos);
-    localStorage.setItem('todos', JSON.stringify(updatedTodos));
-  };
+      return updatedTodos;
+    });
+  }, [todos]);
 
-  // การกรองรายการตามแท็บที่เลือก
+  // กรองรายการตามเงื่อนไขที่กำหนด
   const filteredTodos = useMemo(() => {
     let filtered = [...todos];
 
-    // กรองตามสถานะ (ทั้งหมด, เสร็จแล้ว, ยังไม่เสร็จ)
+    // กรองตามสถานะ (ทำแล้ว/ยังไม่ได้ทำ)
     if (activeTab === 'completed') {
       filtered = filtered.filter(todo => todo.completed);
     } else if (activeTab === 'active') {
       filtered = filtered.filter(todo => !todo.completed);
     }
 
-    // กรองตามหมวดหมู่งาน (quadrants)
+    // กรองตาม Eisenhower Matrix
     if (activeQuadrant > 0) {
-      filtered = filtered.filter(todo => {
-        if (activeQuadrant === 1) return todo.importance === 'high' && todo.urgency === 'high';
-        if (activeQuadrant === 2) return todo.importance === 'high' && todo.urgency === 'low';
-        if (activeQuadrant === 3) return todo.importance === 'low' && todo.urgency === 'high';
-        if (activeQuadrant === 4) return todo.importance === 'low' && todo.urgency === 'low';
-        return true;
-      });
+      switch (activeQuadrant) {
+        case 1: // สำคัญ + เร่งด่วน
+          filtered = filtered.filter(todo => todo.importance === 'high' && todo.urgency === 'high');
+          break;
+        case 2: // สำคัญ + ไม่เร่งด่วน
+          filtered = filtered.filter(todo => todo.importance === 'high' && todo.urgency === 'low');
+          break;
+        case 3: // ไม่สำคัญ + เร่งด่วน
+          filtered = filtered.filter(todo => todo.importance === 'low' && todo.urgency === 'high');
+          break;
+        case 4: // ไม่สำคัญ + ไม่เร่งด่วน
+          filtered = filtered.filter(todo => todo.importance === 'low' && todo.urgency === 'low');
+          break;
+      }
     }
 
-    // เรียงลำดับตามความสำคัญ (ถ้ามี)
+    // กรองเฉพาะงานหลัก (ไม่ใช่งานย่อย)
+    filtered = filtered.filter(todo => !todo.parentId);
+
+    // เรียงลำดับงาน
     filtered.sort((a, b) => {
-      // เรียงตามลำดับความสำคัญก่อน (ถ้ามี)
-      if (a.priority && b.priority && a.priority !== b.priority) {
-        return a.priority - b.priority;
-      }
-
-      // ถ้าไม่มีลำดับความสำคัญหรือเท่ากัน ให้เรียงตามวันที่กำหนด
-      if (a.dueDate && b.dueDate) {
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      }
-
-      // ถ้าไม่มีวันที่กำหนด ให้เรียงตามสถานะเสร็จสิ้น
+      // เรียงตามสถานะเสร็จสิ้น
       if (a.completed !== b.completed) {
         return a.completed ? 1 : -1;
       }
 
-      return 0;
+      // เรียงตามวันกำหนดส่ง
+      if (a.dueDate && b.dueDate) {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      } else if (a.dueDate) {
+        return -1;
+      } else if (b.dueDate) {
+        return 1;
+      }
+
+      // เรียงตามความสำคัญและความเร่งด่วน
+      if (a.importance !== b.importance) {
+        return a.importance === 'high' ? -1 : 1;
+      }
+      if (a.urgency !== b.urgency) {
+        return a.urgency === 'high' ? -1 : 1;
+      }
+
+      // เรียงตามเวลาที่สร้าง (ใหม่ไปเก่า)
+      return b.id - a.id;
     });
 
     return filtered;
   }, [todos, activeTab, activeQuadrant]);
 
-  // ปุ่มแท็บสำหรับกรองรายการ
-  const renderFilterTabs = () => {
-    return (
-      <div className="flex items-center mb-6 overflow-x-auto pb-2 no-scrollbar">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-3 py-2 rounded-md mr-2 text-sm font-medium transition-colors ${activeTab === 'all' ? 'bg-[#ff6100] text-white' : 'bg-[#232323] text-gray-300 hover:bg-[#2a2a2a]'
-            }`}
-        >
-          ทั้งหมด
-        </button>
-        <button
-          onClick={() => setActiveTab('active')}
-          className={`px-3 py-2 rounded-md mr-2 text-sm font-medium transition-colors ${activeTab === 'active' ? 'bg-[#ff6100] text-white' : 'bg-[#232323] text-gray-300 hover:bg-[#2a2a2a]'
-            }`}
-        >
-          ยังไม่เสร็จ
-        </button>
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={`px-3 py-2 rounded-md mr-2 text-sm font-medium transition-colors ${activeTab === 'completed' ? 'bg-[#ff6100] text-white' : 'bg-[#232323] text-gray-300 hover:bg-[#2a2a2a]'
-            }`}
-        >
-          เสร็จแล้ว
-        </button>
+  // นับจำนวนงานที่ทำแล้วและยังไม่ได้ทำ
+  const pendingTasks = useMemo(() => todos.filter(todo => !todo.completed).length, [todos]);
+  const completedTasks = useMemo(() => todos.filter(todo => todo.completed).length, [todos]);
 
-        <div className="ml-auto flex items-center">
-          <select
-            value={activeQuadrant || 0}
-            onChange={(e) => setActiveQuadrant(parseInt(e.target.value))}
-            className="bg-[#232323] text-gray-300 text-sm rounded-md border-gray-700 focus:border-[#ff6100] focus:ring-[#ff6100] block py-2 px-3"
-          >
-            <option value={0}>ทุกประเภท</option>
-            <option value={1}>🔥 ทำทันที</option>
-            <option value={2}>📋 วางแผนทำ</option>
-            <option value={3}>⏰ มอบหมาย</option>
-            <option value={4}>🍃 ตัดทิ้ง</option>
-          </select>
-        </div>
+  // แสดงแทบแบ่งประเภทงาน
+  const renderFilterTabs = () => (
+    <div className="flex items-center mb-4 overflow-x-auto pb-2 no-scrollbar">
+      <button
+        onClick={() => setActiveTab('all')}
+        className={`px-3 py-2 rounded-md mr-2 text-sm font-medium transition-colors ${activeTab === 'all'
+          ? 'bg-[var(--primary-color)] text-white'
+          : 'bg-[var(--gray-medium)] text-gray-300 hover:bg-[var(--gray-light)]'
+          }`}
+      >
+        ทั้งหมด
+      </button>
+      <button
+        onClick={() => setActiveTab('active')}
+        className={`px-3 py-2 rounded-md mr-2 text-sm font-medium transition-colors ${activeTab === 'active'
+          ? 'bg-[var(--primary-color)] text-white'
+          : 'bg-[var(--gray-medium)] text-gray-300 hover:bg-[var(--gray-light)]'
+          }`}
+      >
+        ยังไม่เสร็จ
+      </button>
+      <button
+        onClick={() => setActiveTab('completed')}
+        className={`px-3 py-2 rounded-md mr-2 text-sm font-medium transition-colors ${activeTab === 'completed'
+          ? 'bg-[var(--primary-color)] text-white'
+          : 'bg-[var(--gray-medium)] text-gray-300 hover:bg-[var(--gray-light)]'
+          }`}
+      >
+        เสร็จแล้ว
+      </button>
+
+      <div className="ml-auto">
+        <select
+          value={activeQuadrant}
+          onChange={(e) => setActiveQuadrant(parseInt(e.target.value))}
+          className="bg-[var(--gray-medium)] text-gray-300 text-sm rounded-md border-[var(--gray-light)] focus:border-[var(--primary-color)] focus:ring-[var(--primary-color)] py-2 px-3"
+        >
+          <option value={0}>ทุกประเภท</option>
+          <option value={1}>🔥 ทำทันที</option>
+          <option value={2}>📋 วางแผนทำ</option>
+          <option value={3}>⏰ มอบหมาย</option>
+          <option value={4}>🍃 ตัดทิ้ง</option>
+        </select>
+      </div>
+    </div>
+  );
+
+  // UI สำหรับแสดงสถานะโหลด
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="w-8 h-8 border-4 border-t-[var(--primary-color)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
       </div>
     );
-  };
+  }
 
-  // ส่วนแสดงผลหลัก
   return (
-    <div className="todo-app bg-[#151515] rounded-xl border border-[#262626] shadow-lg overflow-hidden relative">
-      <div className="mb-4 pt-3">
-        <Header />
-      </div>
-
-      {/* Component สำหรับการจัดการการแจ้งเตือน */}
-      <NotificationManager onPermissionChange={handlePermissionChange} />
-
-      {/* ปุ่มไปยังหน้า Calendar View */}
-      <div className="mb-4 flex justify-end">
-        <a
-          href="/calendar"
-          className="flex items-center gap-1 bg-[#2d2d2d] text-white px-3.5 py-2 rounded-full text-sm hover:bg-[#3d3d3d] transition-all duration-200 shadow-md"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span>ปฏิทินงาน</span>
-        </a>
-      </div>
-
+    <div className="mb-20">
       {/* แถบแสดงสถานะและตัวเลือก */}
-      <div className="mb-2 px-3 pb-2 border-b border-[#262626] flex flex-wrap justify-between items-center">
+      <div className="mb-2 px-3 pb-2 border-b border-[var(--gray-light)] flex flex-wrap justify-between items-center">
         <div className="flex items-center gap-2 mb-2 md:mb-0">
-          {activeQuadrant === 1 && <span className="text-xl floating-animation">🔥</span>}
-          {activeQuadrant === 2 && <span className="text-xl floating-animation">📋</span>}
-          {activeQuadrant === 3 && <span className="text-xl floating-animation">⏰</span>}
-          {activeQuadrant === 4 && <span className="text-xl floating-animation">🍃</span>}
-          <h2 className={`text-lg font-bold ${activeQuadrant > 0 ? 'text-gradient' : 'text-white'}`}>
+          {activeQuadrant > 0 && (
+            <span className="text-xl">
+              {activeQuadrant === 1 ? '🔥' :
+                activeQuadrant === 2 ? '📋' :
+                  activeQuadrant === 3 ? '⏰' : '🍃'}
+            </span>
+          )}
+          <h2 className="text-lg font-bold text-white">
             {activeQuadrant === 1 ? "ทำทันที" :
               activeQuadrant === 2 ? "วางแผนทำ" :
                 activeQuadrant === 3 ? "มอบหมาย" :
                   activeQuadrant === 4 ? "ตัดทิ้ง" : "รายการทั้งหมด"}
             &nbsp;
-            ({activeQuadrant > 0 ? getQuadrantTodos(activeQuadrant).length : todos.length})
+            ({activeQuadrant > 0
+              ? todos.filter(todo => {
+                if (activeQuadrant === 1) return todo.importance === 'high' && todo.urgency === 'high';
+                if (activeQuadrant === 2) return todo.importance === 'high' && todo.urgency === 'low';
+                if (activeQuadrant === 3) return todo.importance === 'low' && todo.urgency === 'high';
+                if (activeQuadrant === 4) return todo.importance === 'low' && todo.urgency === 'low';
+                return false;
+              }).length
+              : todos.length})
           </h2>
         </div>
 
         {completedTasks > 0 && (
           <button
             onClick={clearCompleted}
-            className="badge-modern !bg-[#262626] hover:!bg-[#3d3d3d] flex items-center gap-1 transition-colors"
+            className="badge-modern !bg-[var(--gray-medium)] hover:!bg-[var(--gray-light)] flex items-center gap-1 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -676,226 +426,144 @@ export default function Todo() {
 
       <div className="max-h-[calc(100vh-250px)] overflow-y-auto hide-scrollbar p-2">
         {renderFilterTabs()}
-        {activeQuadrant > 0 ? (
-          getQuadrantTodos(activeQuadrant).length === 0 ? (
-            <div className="text-center text-gray-400 py-10 flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-3 floating-animation" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <p className="mb-2">ไม่มีรายการในหมวดนี้</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="mt-3 gradient-text text-sm flex items-center gap-1"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                เพิ่มรายการใหม่
-              </button>
-            </div>
-          ) : (
-            filteredTodos.map(todo => (
-              <div key={todo.id} className="animate-fadeIn">
-                <TodoItem
-                  id={todo.id}
-                  text={todo.text}
-                  completed={todo.completed}
-                  importance={todo.importance}
-                  urgency={todo.urgency}
-                  dueDate={todo.dueDate}
-                  reminderDate={todo.reminderDate}
-                  categories={todo.categories}
-                  tags={todo.tags}
-                  startTime={todo.startTime}
-                  endTime={todo.endTime}
-                  isAllDay={todo.isAllDay}
-                  onToggle={toggleTodo}
-                  onDelete={deleteTodo}
-                  onEdit={editTodo}
-                  onAddSubtask={addSubtask}
-                  timeSpent={todo.timeSpent}
-                  pomodoroSessions={todo.pomodoroSessions}
-                  efficiency={todo.efficiency}
-                  lastPomodoroDate={todo.lastPomodoroDate}
-                  subtasks={todo.subtasks}
-                  hasChildTasks={todo.subtasks && todo.subtasks.length > 0}
-                  quadrant={
-                    todo.importance === 'high' && todo.urgency === 'high' ? 1 :
-                      todo.importance === 'high' && todo.urgency === 'low' ? 2 :
-                        todo.importance === 'low' && todo.urgency === 'high' ? 3 : 4
-                  }
-                />
-                {/* แสดงงานย่อย */}
-                {todo.subtasks && todo.subtasks.length > 0 && (
-                  <ul className="mt-1">
-                    {todo.subtasks.map(subtaskId => {
-                      const subtask = todos.find(t => t.id === subtaskId);
-                      if (!subtask) return null;
 
-                      return (
-                        <TodoItem
-                          key={subtask.id}
-                          id={subtask.id}
-                          text={subtask.text}
-                          completed={subtask.completed}
-                          importance={subtask.importance}
-                          urgency={subtask.urgency}
-                          dueDate={subtask.dueDate}
-                          reminderDate={subtask.reminderDate}
-                          categories={subtask.categories}
-                          tags={subtask.tags}
-                          startTime={subtask.startTime}
-                          endTime={subtask.endTime}
-                          isAllDay={subtask.isAllDay}
-                          onToggle={toggleTodo}
-                          onDelete={deleteSubtask}
-                          onEdit={editTodo}
-                          timeSpent={subtask.timeSpent}
-                          pomodoroSessions={subtask.pomodoroSessions}
-                          efficiency={subtask.efficiency}
-                          lastPomodoroDate={subtask.lastPomodoroDate}
-                          isSubtask={true}
-                          parentId={todo.id}
-                          quadrant={
-                            subtask.importance === 'high' && subtask.urgency === 'high' ? 1 :
-                              subtask.importance === 'high' && subtask.urgency === 'low' ? 2 :
-                                subtask.importance === 'low' && subtask.urgency === 'high' ? 3 : 4
-                          }
-                        />
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            ))
-          )
+        {filteredTodos.length === 0 ? (
+          <div className="text-center text-gray-400 py-10 flex flex-col items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p className="mb-2 text-[var(--primary-color)] font-medium">
+              {activeQuadrant > 0
+                ? "ไม่มีรายการในหมวดนี้"
+                : todos.length === 0
+                  ? "ยังไม่มีรายการที่ต้องทำ"
+                  : "ไม่พบรายการที่ตรงกับเงื่อนไข"}
+            </p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="mt-3 bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white text-sm flex items-center gap-1.5 py-2.5 px-4 rounded-lg transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              เพิ่มรายการใหม่
+            </button>
+          </div>
         ) : (
-          todos.length === 0 ? (
-            <div className="text-center text-gray-400 py-12 flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-4 floating-animation" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <p className="mb-2 text-gradient font-medium">ยังไม่มีรายการที่ต้องทำ</p>
-              <p className="text-xs text-gray-500 mb-3">เริ่มเพิ่มรายการแรกของคุณได้เลย</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="btn-modern text-sm flex items-center gap-1.5 py-2.5 px-4"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                เพิ่มรายการแรก
-              </button>
-            </div>
-          ) : (
-            filteredTodos.map(todo => (
-              <div key={todo.id} className="animate-fadeIn">
-                <TodoItem
-                  id={todo.id}
-                  text={todo.text}
-                  completed={todo.completed}
-                  importance={todo.importance}
-                  urgency={todo.urgency}
-                  dueDate={todo.dueDate}
-                  reminderDate={todo.reminderDate}
-                  categories={todo.categories}
-                  tags={todo.tags}
-                  startTime={todo.startTime}
-                  endTime={todo.endTime}
-                  isAllDay={todo.isAllDay}
-                  onToggle={toggleTodo}
-                  onDelete={deleteTodo}
-                  onEdit={editTodo}
-                  onAddSubtask={addSubtask}
-                  timeSpent={todo.timeSpent}
-                  pomodoroSessions={todo.pomodoroSessions}
-                  efficiency={todo.efficiency}
-                  lastPomodoroDate={todo.lastPomodoroDate}
-                  subtasks={todo.subtasks}
-                  hasChildTasks={todo.subtasks && todo.subtasks.length > 0}
-                  quadrant={
-                    todo.importance === 'high' && todo.urgency === 'high' ? 1 :
-                      todo.importance === 'high' && todo.urgency === 'low' ? 2 :
-                        todo.importance === 'low' && todo.urgency === 'high' ? 3 : 4
-                  }
-                />
-                {/* แสดงงานย่อย */}
-                {todo.subtasks && todo.subtasks.length > 0 && (
-                  <ul className="mt-1">
-                    {todo.subtasks.map(subtaskId => {
-                      const subtask = todos.find(t => t.id === subtaskId);
-                      if (!subtask) return null;
+          filteredTodos.map(todo => (
+            <div key={todo.id} className="animate-fadeIn">
+              <TodoItem
+                id={todo.id}
+                text={todo.text}
+                completed={todo.completed}
+                importance={todo.importance}
+                urgency={todo.urgency}
+                dueDate={todo.dueDate}
+                reminderDate={todo.reminderDate}
+                categories={todo.categories}
+                tags={todo.tags || []}
+                startTime={todo.startTime}
+                endTime={todo.endTime}
+                isAllDay={todo.isAllDay}
+                onToggle={toggleTodo}
+                onDelete={deleteTodo}
+                onEdit={editTodo}
+                onAddSubtask={addSubtask}
+                timeSpent={todo.timeSpent}
+                pomodoroSessions={todo.pomodoroSessions}
+                efficiency={todo.efficiency}
+                lastPomodoroDate={todo.lastPomodoroDate}
+                subtasks={todo.subtasks}
+                hasChildTasks={todo.subtasks && todo.subtasks.length > 0}
+                quadrant={
+                  todo.importance === 'high' && todo.urgency === 'high' ? 1 :
+                    todo.importance === 'high' && todo.urgency === 'low' ? 2 :
+                      todo.importance === 'low' && todo.urgency === 'high' ? 3 : 4
+                }
+              />
 
-                      return (
-                        <TodoItem
-                          key={subtask.id}
-                          id={subtask.id}
-                          text={subtask.text}
-                          completed={subtask.completed}
-                          importance={subtask.importance}
-                          urgency={subtask.urgency}
-                          dueDate={subtask.dueDate}
-                          reminderDate={subtask.reminderDate}
-                          categories={subtask.categories}
-                          tags={subtask.tags}
-                          startTime={subtask.startTime}
-                          endTime={subtask.endTime}
-                          isAllDay={subtask.isAllDay}
-                          onToggle={toggleTodo}
-                          onDelete={deleteSubtask}
-                          onEdit={editTodo}
-                          timeSpent={subtask.timeSpent}
-                          pomodoroSessions={subtask.pomodoroSessions}
-                          efficiency={subtask.efficiency}
-                          lastPomodoroDate={subtask.lastPomodoroDate}
-                          isSubtask={true}
-                          parentId={todo.id}
-                          quadrant={
-                            subtask.importance === 'high' && subtask.urgency === 'high' ? 1 :
-                              subtask.importance === 'high' && subtask.urgency === 'low' ? 2 :
-                                subtask.importance === 'low' && subtask.urgency === 'high' ? 3 : 4
-                          }
-                        />
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            ))
-          )
+              {/* แสดงงานย่อย */}
+              {todo.subtasks && todo.subtasks.length > 0 && (
+                <ul className="mt-1">
+                  {todo.subtasks.map(subtaskId => {
+                    const subtask = todos.find(t => t.id === subtaskId);
+                    if (!subtask) return null;
+
+                    return (
+                      <TodoItem
+                        key={subtask.id}
+                        id={subtask.id}
+                        text={subtask.text}
+                        completed={subtask.completed}
+                        importance={subtask.importance}
+                        urgency={subtask.urgency}
+                        dueDate={subtask.dueDate}
+                        reminderDate={subtask.reminderDate}
+                        categories={subtask.categories}
+                        tags={subtask.tags || []}
+                        startTime={subtask.startTime}
+                        endTime={subtask.endTime}
+                        isAllDay={subtask.isAllDay}
+                        onToggle={toggleTodo}
+                        onDelete={deleteSubtask}
+                        onEdit={editTodo}
+                        timeSpent={subtask.timeSpent}
+                        pomodoroSessions={subtask.pomodoroSessions}
+                        efficiency={subtask.efficiency}
+                        lastPomodoroDate={subtask.lastPomodoroDate}
+                        isSubtask={true}
+                        parentId={todo.id}
+                        quadrant={
+                          subtask.importance === 'high' && subtask.urgency === 'high' ? 1 :
+                            subtask.importance === 'high' && subtask.urgency === 'low' ? 2 :
+                              subtask.importance === 'low' && subtask.urgency === 'high' ? 3 : 4
+                        }
+                      />
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          ))
         )}
       </div>
 
       {/* ปุ่มเพิ่มรายการลอยด้านล่าง */}
       <button
         onClick={() => setShowAddModal(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 gradient-bg text-white rounded-full shadow-lg flex items-center justify-center z-10 md:hidden hover:bg-[#ff7a30] transition-colors glow-effect pulse-animation"
+        className="fixed bottom-20 right-6 w-14 h-14 bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white rounded-full shadow-lg flex items-center justify-center z-10 transition-colors"
+        aria-label="เพิ่มรายการใหม่"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       </button>
 
-      {/* แสดงการตั้งค่าเพิ่มเติมเมื่อกดปุ่ม - Modal */}
+      {/* Modal สำหรับเพิ่มรายการใหม่ */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowAddModal(false)}
+        >
           <div
-            className="glassmorphism rounded-xl p-5 w-full max-w-md border border-[#3d3d3d] shadow-xl popup-effect max-h-[90vh] overflow-y-auto"
+            className="bg-[var(--card-bg)] rounded-xl p-5 w-full max-w-md border border-[var(--border-color)] shadow-xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold mb-4 text-gradient flex items-center gap-2 sticky top-0 bg-[#1e1e1e] py-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              เพิ่มรายการใหม่
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[var(--primary-color)] flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                เพิ่มรายการใหม่
+              </h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="ml-auto text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white"
                 aria-label="ปิด"
               >
                 ✕
               </button>
-            </h3>
+            </div>
 
             <div className="mb-4">
               <label className="text-sm font-medium text-gray-300 block mb-2">รายละเอียด</label>
@@ -904,31 +572,9 @@ export default function Todo() {
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
                 placeholder="รายละเอียดงาน..."
-                className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+                className="w-full p-3 bg-[var(--gray-medium)] text-white text-sm rounded-lg border border-[var(--gray-light)] focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] outline-none transition-all"
                 autoFocus
               />
-            </div>
-
-            <div className="mb-4">
-              <label className="text-sm font-medium text-gray-300 block mb-2">ลำดับความสำคัญ</label>
-              <div className="flex items-center justify-between px-2">
-                <span className="text-xs text-gray-400">ต่ำ</span>
-                <div className="flex items-center space-x-2">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <button
-                      key={value}
-                      onClick={() => setNewPriority(value)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${newPriority === value
-                          ? 'bg-gradient-to-br from-[#ff6100] to-[#ff8f4d] text-white'
-                          : 'bg-[#2d2d2d] text-gray-300'
-                        }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-                <span className="text-xs text-gray-400">สูง</span>
-              </div>
             </div>
 
             <div className="mb-4">
@@ -936,30 +582,38 @@ export default function Todo() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => { setNewImportance('high'); setNewUrgency('high'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'high' ? 'gradient-bg text-white border border-red-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'high'
+                    ? 'bg-gradient-to-r from-[var(--priority-1)] to-[var(--priority-1)] text-white'
+                    : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
                 >
-                  <span className="text-lg floating-animation">🔥</span>
+                  <span className="text-lg">🔥</span>
                   <span>ทำทันที</span>
                 </button>
                 <button
                   onClick={() => { setNewImportance('high'); setNewUrgency('low'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'low' ? 'gradient-bg text-white border border-[#ff6100]' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'low'
+                    ? 'bg-gradient-to-r from-[var(--priority-2)] to-[var(--priority-2)] text-white'
+                    : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
                 >
-                  <span className="text-lg floating-animation">📋</span>
+                  <span className="text-lg">📋</span>
                   <span>วางแผนทำ</span>
                 </button>
                 <button
                   onClick={() => { setNewImportance('low'); setNewUrgency('high'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'high' ? 'gradient-bg text-white border border-yellow-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'high'
+                    ? 'bg-gradient-to-r from-[var(--priority-3)] to-[var(--priority-3)] text-white'
+                    : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
                 >
-                  <span className="text-lg floating-animation">⏰</span>
+                  <span className="text-lg">⏰</span>
                   <span>มอบหมาย</span>
                 </button>
                 <button
                   onClick={() => { setNewImportance('low'); setNewUrgency('low'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'low' ? 'gradient-bg text-white border border-green-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'low'
+                    ? 'bg-gradient-to-r from-[var(--priority-4)] to-[var(--priority-4)] text-white'
+                    : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'}`}
                 >
-                  <span className="text-lg floating-animation">🍃</span>
+                  <span className="text-lg">🍃</span>
                   <span>ตัดทิ้ง</span>
                 </button>
               </div>
@@ -968,105 +622,48 @@ export default function Todo() {
             <div className="mb-4">
               <label className="text-sm font-medium text-gray-300 block mb-2">หมวดหมู่</label>
               <div className="flex flex-wrap gap-1.5 mb-3">
-                {categories.map((category) => {
-                  if (typeof category !== 'string') return null;
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => setNewCategories(
-                        newCategories.includes(category)
-                          ? newCategories.filter(c => c !== category)
-                          : [...newCategories, category]
-                      )}
-                      className={`badge-modern ${newCategories.includes(category)
-                          ? '!bg-[#ff6100] text-white'
-                          : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'
-                        }`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
-                      {category}
-                    </button>
-                  );
-                })}
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setNewCategories(
+                      newCategories.includes(category)
+                        ? newCategories.filter(c => c !== category)
+                        : [...newCategories, category]
+                    )}
+                    className={`badge-modern ${newCategories.includes(category)
+                      ? 'bg-[var(--primary-color)] text-white'
+                      : 'bg-[var(--gray-medium)] text-gray-300 border border-[var(--gray-light)]'
+                      }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    {category}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="mb-5">
-              <label className="text-sm font-medium text-gray-300 block mb-2">
-                <div className="flex items-center gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  กำหนดเวลา
-                </div>
-              </label>
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-300 block mb-2">กำหนดเสร็จ</label>
               <input
                 type="datetime-local"
                 value={newDueDate || ''}
                 onChange={(e) => setNewDueDate(e.target.value)}
-                className="w-full p-3 mb-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+                className="w-full p-3 bg-[var(--gray-medium)] text-white text-sm rounded-lg border border-[var(--gray-light)] focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] outline-none transition-all"
               />
-
-              <div className="flex items-center mb-3">
-                <input
-                  type="checkbox"
-                  id="all-day-new"
-                  checked={newIsAllDay}
-                  onChange={(e) => setNewIsAllDay(e.target.checked)}
-                  className="checkbox-custom"
-                />
-                <label htmlFor="all-day-new" className="text-sm text-gray-300">ทั้งวัน</label>
-              </div>
-
-              {!newIsAllDay && newDueDate && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น</div>
-                    <input
-                      type="time"
-                      value={newStartTime || ''}
-                      onChange={(e) => setNewStartTime(e.target.value)}
-                      className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด</div>
-                    <input
-                      type="time"
-                      value={newEndTime || ''}
-                      onChange={(e) => setNewEndTime(e.target.value)}
-                      className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="flex justify-between mt-6 mb-2 sticky bottom-0 bg-[#1e1e1e] py-3">
+            <div className="flex justify-between mt-6">
               <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setNewTodo('');
-                  setNewDueDate(undefined);
-                  setNewReminderDate(undefined);
-                  setNewCategories([]);
-                  setNewTags([]);
-                }}
-                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors focus:ring-2 focus:ring-gray-600"
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
               >
                 ยกเลิก
               </button>
               <button
-                onClick={() => {
-                  if (newTodo.trim() !== '') {
-                    addTodo();
-                    setShowAddModal(false);
-                  }
-                }}
-                className={`px-5 py-2.5 bg-[#ff6100] hover:bg-[#ff7a30] text-white rounded-lg transition-colors focus:ring-2 focus:ring-[#ff6100]/50 ${newTodo.trim() === '' ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                onClick={addTodo}
+                className={`px-4 py-2.5 bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white rounded-lg transition-colors ${newTodo.trim() === '' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={newTodo.trim() === ''}
               >
                 เพิ่มรายการ
@@ -1077,4 +674,4 @@ export default function Todo() {
       )}
     </div>
   );
-} 
+}
