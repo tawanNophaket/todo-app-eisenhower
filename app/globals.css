@@ -49,201 +49,169 @@ body {
   background: rgba(26, 26, 26, 0.7);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   border-radius: var(--border-radius);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: var(--card-shadow);
-  padding: 20px;
+}
+
+/* ปรับแต่ง input */
+input, textarea, select {
+  background-color: rgba(42, 42, 42, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  color: white !important;
+  font-family: 'Prompt', Arial, sans-serif;
   transition: var(--transition);
+  backdrop-filter: blur(4px);
 }
 
-/* Glass effect เวอร์ชันใหม่ */
-.neo-glass {
-  background: rgba(26, 26, 26, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.2),
-    0 1px 2px rgba(255, 255, 255, 0.05) inset;
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  overflow: hidden;
+input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--primary);
+  border-radius: 4px !important;
   position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.2s ease;
 }
 
-.neo-glass::before {
+input[type="checkbox"]:checked {
+  transform: rotateY(180deg);
+}
+
+input[type="datetime-local"],
+input[type="time"] {
+  color-scheme: dark;
+}
+
+::placeholder {
+  color: rgba(156, 163, 175, 0.6);
+  opacity: 1;
+}
+
+/* Modern buttons */
+.btn-modern {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 500;
+  box-shadow: var(--button-shadow);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.btn-modern:before {
   content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.05),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   transition: 0.5s;
+  z-index: -1;
 }
 
-.neo-glass:hover::before {
+.btn-modern:hover:before {
   left: 100%;
 }
 
-/* Effects */
+.btn-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 97, 0, 0.4);
+}
 
-/* ปุ่มแบบ 3D */
-.btn-3d {
-  position: relative;
-  padding: 12px 24px;
-  background: var(--primary-gradient);
+.btn-secondary {
+  background: rgba(42, 42, 42, 0.8);
   color: white;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  box-shadow: 
-    0 6px 0 var(--primary-dark),
-    0 8px 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: var(--transition);
+  backdrop-filter: blur(4px);
+}
+
+.btn-secondary:hover {
+  background: rgba(60, 60, 60, 0.8);
   transform: translateY(-2px);
 }
 
-.btn-3d:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 8px 0 var(--primary-dark),
-    0 12px 15px rgba(0, 0, 0, 0.3);
-}
-
-.btn-3d:active {
-  transform: translateY(2px);
-  box-shadow: 
-    0 2px 0 var(--primary-dark),
-    0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* ผลกระทบเรืองแสง */
-.glow-effect {
-  position: relative;
-}
-
-.glow-effect::after {
-  content: "";
-  background: var(--primary);
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: inherit;
-  z-index: -1;
-  animation: glow-pulse 2.5s infinite;
-  opacity: 0;
-}
-
-@keyframes glow-pulse {
-  0% {
-    opacity: 0;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.3;
-    transform: scale(1.15);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.4);
-  }
-}
-
-/* เอฟเฟกต์บริเวณขอบ */
-.border-glow {
-  position: relative;
-  border: 1px solid rgba(255, 97, 0, 0.3);
+/* Card styling */
+.card {
+  background: var(--secondary-gradient);
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--card-shadow);
   overflow: hidden;
-  z-index: 0;
+  transition: var(--transition);
+  position: relative;
 }
 
-.border-glow::before {
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ฉากหลังเรืองแสง (glow) */
+.bg-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-shine:after {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(
-    45deg,
-    var(--primary),
-    transparent,
-    var(--primary),
-    transparent
-  );
-  z-index: -1;
-  background-size: 400%;
-  animation: border-animate 12s linear infinite;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+  transform: rotate(30deg);
+  pointer-events: none;
+  z-index: 1;
 }
 
-@keyframes border-animate {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 400% 0;
-  }
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
-/* นีออนเท็กซ์ */
-.neon-text {
-  color: #fff;
-  text-shadow:
-    0 0 5px rgba(255, 97, 0, 0.7),
-    0 0 10px rgba(255, 97, 0, 0.5),
-    0 0 20px rgba(255, 97, 0, 0.3);
-  animation: neon-flicker 4s infinite alternate;
-}
-
-@keyframes neon-flicker {
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-    opacity: 1;
-    text-shadow:
-      0 0 5px rgba(255, 97, 0, 0.7),
-      0 0 10px rgba(255, 97, 0, 0.5),
-      0 0 20px rgba(255, 97, 0, 0.3);
-  }
-  20%, 24%, 55% {
-    opacity: 0.8;
-    text-shadow: none;
-  }
-}
-
-/* Animation Keyframes */
-
+/* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-in-out;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
 @keyframes fadeInRight {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.animate-fadeInRight {
-  animation: fadeInRight 0.5s ease-out;
-}
-
-@keyframes fadeInLeft {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
+.animate-fadeInRight {
+  animation: fadeInRight 0.4s ease-out forwards;
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .animate-fadeInLeft {
-  animation: fadeInLeft 0.5s ease-out;
+  animation: fadeInLeft 0.4s ease-out forwards;
 }
 
 @keyframes pulse {
@@ -253,13 +221,13 @@ body {
 }
 
 .hover-pulse:hover {
-  animation: pulse 1s infinite;
+  animation: pulse 0.5s ease-in-out;
 }
 
 @keyframes glow {
-  0% { box-shadow: 0 0 5px rgba(255, 97, 0, 0.5); }
-  50% { box-shadow: 0 0 20px rgba(255, 97, 0, 0.8); }
-  100% { box-shadow: 0 0 5px rgba(255, 97, 0, 0.5); }
+  0% { box-shadow: 0 0 5px rgba(255, 97, 0, 0); }
+  50% { box-shadow: 0 0 15px rgba(255, 97, 0, 0.5), 0 0 30px rgba(255, 97, 0, 0.2); }
+  100% { box-shadow: 0 0 5px rgba(255, 97, 0, 0); }
 }
 
 .hover-glow:hover {
@@ -267,23 +235,24 @@ body {
 }
 
 @keyframes shimmer {
-  0% { background-position: -100% 0; }
-  100% { background-position: 100% 0; }
+  0% { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
 }
 
 .shimmer-effect {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  background: linear-gradient(to right, var(--gray-medium) 4%, var(--gray-light) 25%, var(--gray-medium) 36%);
+  background-size: 600px 100%;
+  animation: shimmer 1.5s infinite linear;
 }
 
 @keyframes highlight-animation {
-  0% { background-color: rgba(255, 97, 0, 0.3); }
+  0% { background-color: rgba(255, 97, 0, 0.2); }
+  50% { background-color: rgba(255, 97, 0, 0.3); }
   100% { background-color: transparent; }
 }
 
 .highlight-todo {
-  animation: highlight-animation 2s ease;
+  animation: highlight-animation 2s ease-out forwards;
 }
 
 @keyframes bounce {
@@ -292,7 +261,7 @@ body {
 }
 
 .animate-bounce-slow {
-  animation: bounce 2s infinite;
+  animation: bounce 2s ease-in-out infinite;
 }
 
 @keyframes scale {
@@ -302,7 +271,7 @@ body {
 }
 
 .scale-on-press:active {
-  animation: scale 0.3s ease;
+  animation: scale 0.2s ease-in-out;
 }
 
 @keyframes slide-up {
@@ -311,115 +280,68 @@ body {
 }
 
 .animate-slide-up {
-  animation: slide-up 0.4s ease-out;
+  animation: slide-up 0.4s ease forwards;
 }
 
 @keyframes reveal {
-  0% { transform: scaleY(0); transform-origin: top; }
-  100% { transform: scaleY(1); transform-origin: top; }
+  from { opacity: 0; clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
 }
 
 .animate-reveal {
-  animation: reveal 0.3s ease-out;
-  transform-origin: top;
+  animation: reveal 0.5s ease forwards;
 }
 
-/* เอฟเฟกต์การกระเพื่อม */
-@keyframes floating {
-  0% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-5px) rotate(1deg); }
-  50% { transform: translateY(0) rotate(0deg); }
-  75% { transform: translateY(5px) rotate(-1deg); }
-  100% { transform: translateY(0) rotate(0deg); }
-}
-
-.animate-float {
-  animation: floating 6s ease-in-out infinite;
-}
-
-/* เอฟเฟกต์การเต้นของหัวใจ */
-@keyframes heartbeat {
-  0% { transform: scale(1); }
-  25% { transform: scale(1.1); }
-  40% { transform: scale(1); }
-  60% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-.animate-heartbeat {
-  animation: heartbeat 2s infinite;
-}
-
-/* เอฟเฟกต์การเบลอและไม่เบลอ */
-@keyframes blur-in-out {
-  0% { filter: blur(0); }
-  50% { filter: blur(3px); }
-  100% { filter: blur(0); }
-}
-
-.animate-blur {
-  animation: blur-in-out 3s infinite;
-}
-
-/* เอฟเฟกต์พิมพ์ดีด */
-@keyframes typing {
-  from { width: 0 }
-  to { width: 100% }
-}
-
-.animate-typing {
-  overflow: hidden;
-  white-space: nowrap;
-  border-right: 2px solid var(--primary);
-  animation: 
-    typing 3.5s steps(40, end),
-    blink-caret 0.75s step-end infinite;
-}
-
-@keyframes blink-caret {
-  from, to { border-color: transparent }
-  50% { border-color: var(--primary) }
-}
-
-/* Scrollbar styling */
+/* ปรับแต่ง scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
-  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--gray-dark);
-  border-radius: 10px;
+  background: var(--gray-medium);
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gray-light);
-  border-radius: 10px;
+  background: var(--primary-dark);
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
 
-/* Focus state */
+/* สำหรับการ focus input ที่ดูดีขึ้น */
 input:focus, 
 textarea:focus, 
 select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 1px var(--primary-light);
+  outline: none; 
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px rgba(255, 97, 0, 0.2) !important;
+  transition: all 0.2s ease;
 }
 
-/* เอฟเฟกต์เมื่อแตะที่องค์ประกอบ (สำหรับมือถือ) */
-@media (hover: none) and (pointer: coarse) {
-  .touch-effect:active {
-    transform: scale(0.98);
-    opacity: 0.8;
-    transition: transform 0.1s, opacity 0.1s;
-  }
+/* Custom border classes */
+.border-transparent-30 {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.border-red-transparent {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.border-orange-transparent {
+  border-color: rgba(255, 97, 0, 0.3);
+}
+.border-yellow-transparent {
+  border-color: rgba(234, 179, 8, 0.3);
+}
+.border-green-transparent {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.border-gray-transparent {
+  border-color: rgba(75, 85, 99, 0.3);
 }
 
-/* Media queries */
+/* เพิ่มสำหรับมือถือ */
 @media (max-width: 640px) {
   .hide-scrollbar {
     -ms-overflow-style: none;
@@ -431,25 +353,19 @@ select:focus {
   }
   
   input, button {
-    font-size: 16px; /* พอดีกับการซูมบนมือถือ */
+    font-size: 16px; /* ป้องกันการซูมบนมือถือเมื่อกดที่ input */
   }
   
   body {
     background-image: 
-      radial-gradient(circle at 50% 10%, rgba(255, 97, 0, 0.05) 0%, transparent 30%),
-      radial-gradient(circle at 80% 40%, rgba(0, 194, 255, 0.03) 0%, transparent 30%),
+      radial-gradient(circle at 15% 30%, rgba(255, 97, 0, 0.06) 0%, transparent 20%),
+      radial-gradient(circle at 85% 20%, rgba(0, 194, 255, 0.04) 0%, transparent 20%),
       radial-gradient(circle at 50% 50%, rgba(18, 18, 18, 1) 0%, rgba(10, 10, 10, 1) 100%);
   }
-  
-  .touch-element {
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-}
 
-/* Dark Mode Optimization */
-@media (prefers-color-scheme: dark) {
-  body {
-    background: var(--background);
+  /* จัดการกับการสัมผัสบนมือถือ */
+  .touch-element {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
