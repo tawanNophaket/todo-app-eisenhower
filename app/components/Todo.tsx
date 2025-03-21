@@ -419,8 +419,8 @@ export default function Todo() {
 
   // ส่วนแสดงผลหลัก
   return (
-    <div className="w-full max-w-lg mx-auto px-3">
-      <div className="mb-4">
+    <div className="w-full max-w-lg mx-auto px-3 min-h-screen pb-20 bg-[#121212]">
+      <div className="mb-4 pt-3">
         <Header />
       </div>
       
@@ -429,22 +429,33 @@ export default function Todo() {
       
       {/* ปุ่มไปยังหน้า Calendar View */}
       <div className="mb-4 flex justify-end">
-        <a href="/calendar" className="flex items-center gap-1 bg-[#2d2d2d] text-white px-3 py-1.5 rounded-lg text-sm">
+        <a 
+          href="/calendar" 
+          className="flex items-center gap-1 bg-[#2d2d2d] text-white px-3.5 py-2 rounded-full text-sm hover:bg-[#3d3d3d] transition-all duration-200 shadow-md"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span>ปฏิทิน</span>
+          <span>ปฏิทินงาน</span>
         </a>
       </div>
       
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      {/* การ์ดแสดงหมวดหมู่ */}
+      <div className="grid grid-cols-2 gap-3 mb-5">
         <div
           onClick={() => setActiveQuadrant(activeQuadrant === 1 ? null : 1)}
-          className={`p-3 rounded-lg text-sm font-medium ${activeQuadrant === 1 ? 'bg-red-600' : 'bg-[#1e1e1e]'} hover:bg-red-600 relative transition-colors duration-300 h-20 cursor-pointer shadow`}
+          className={`p-4 rounded-xl text-sm ${activeQuadrant === 1 ? 'bg-red-500 bg-opacity-20 border border-red-500' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-red-500 relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
         >
-          <span className="block font-bold text-sm">ทำทันที</span>
-          <span className="text-xs text-gray-300">สำคัญ + เร่งด่วน</span>
-          <span className="text-xs absolute bottom-2 right-3 bg-[#00000040] px-2 py-0.5 rounded-full">{getQuadrantTodos(1).length}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🔥</span>
+            <span className="font-semibold">ทำทันที</span>
+          </div>
+          <div className="flex justify-between items-end">
+            <span className="text-xs text-gray-300">สำคัญ + เร่งด่วน</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
+              {getQuadrantTodos(1).length}
+            </span>
+          </div>
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -454,19 +465,28 @@ export default function Todo() {
               const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
               if (input) input.focus();
             }}
-            className="absolute top-2 right-2 w-6 h-6 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
             title="เพิ่มรายการใหม่ในหมวดนี้"
           >
-            <span className="text-sm">+</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </button>
         </div>
         <div
           onClick={() => setActiveQuadrant(activeQuadrant === 2 ? null : 2)}
-          className={`p-3 rounded-lg text-sm font-medium ${activeQuadrant === 2 ? 'bg-[#ff6100]' : 'bg-[#1e1e1e]'} hover:bg-[#ff6100] relative transition-colors duration-300 h-20 cursor-pointer shadow`}
+          className={`p-4 rounded-xl text-sm ${activeQuadrant === 2 ? 'bg-[#ff6100] bg-opacity-20 border border-[#ff6100]' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-[#ff6100] relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
         >
-          <span className="block font-bold text-sm">วางแผนทำ</span>
-          <span className="text-xs text-gray-300">สำคัญ + ไม่เร่งด่วน</span>
-          <span className="text-xs absolute bottom-2 right-3 bg-[#00000040] px-2 py-0.5 rounded-full">{getQuadrantTodos(2).length}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📋</span>
+            <span className="font-semibold">วางแผนทำ</span>
+          </div>
+          <div className="flex justify-between items-end">
+            <span className="text-xs text-gray-300">สำคัญ + ไม่เร่งด่วน</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
+              {getQuadrantTodos(2).length}
+            </span>
+          </div>
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -476,19 +496,28 @@ export default function Todo() {
               const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
               if (input) input.focus();
             }}
-            className="absolute top-2 right-2 w-6 h-6 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-[#ff884d] transition-colors"
+            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-[#ff6100] transition-colors"
             title="เพิ่มรายการใหม่ในหมวดนี้"
           >
-            <span className="text-sm">+</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </button>
         </div>
         <div
           onClick={() => setActiveQuadrant(activeQuadrant === 3 ? null : 3)}
-          className={`p-3 rounded-lg text-sm font-medium ${activeQuadrant === 3 ? 'bg-yellow-500' : 'bg-[#1e1e1e]'} hover:bg-yellow-500 relative transition-colors duration-300 h-20 cursor-pointer shadow`}
+          className={`p-4 rounded-xl text-sm ${activeQuadrant === 3 ? 'bg-yellow-500 bg-opacity-20 border border-yellow-500' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-yellow-500 relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
         >
-          <span className="block font-bold text-sm">มอบหมาย</span>
-          <span className="text-xs text-gray-300">ไม่สำคัญ + เร่งด่วน</span>
-          <span className="text-xs absolute bottom-2 right-3 bg-[#00000040] px-2 py-0.5 rounded-full">{getQuadrantTodos(3).length}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⏰</span>
+            <span className="font-semibold">มอบหมาย</span>
+          </div>
+          <div className="flex justify-between items-end">
+            <span className="text-xs text-gray-300">ไม่สำคัญ + เร่งด่วน</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
+              {getQuadrantTodos(3).length}
+            </span>
+          </div>
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -498,19 +527,28 @@ export default function Todo() {
               const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
               if (input) input.focus();
             }}
-            className="absolute top-2 right-2 w-6 h-6 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-yellow-400 transition-colors"
+            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-yellow-500 transition-colors"
             title="เพิ่มรายการใหม่ในหมวดนี้"
           >
-            <span className="text-sm">+</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </button>
         </div>
         <div
           onClick={() => setActiveQuadrant(activeQuadrant === 4 ? null : 4)}
-          className={`p-3 rounded-lg text-sm font-medium ${activeQuadrant === 4 ? 'bg-green-500' : 'bg-[#1e1e1e]'} hover:bg-green-500 relative transition-colors duration-300 h-20 cursor-pointer shadow`}
+          className={`p-4 rounded-xl text-sm ${activeQuadrant === 4 ? 'bg-green-500 bg-opacity-20 border border-green-500' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-green-500 relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
         >
-          <span className="block font-bold text-sm">ตัดทิ้ง</span>
-          <span className="text-xs text-gray-300">ไม่สำคัญ + ไม่เร่งด่วน</span>
-          <span className="text-xs absolute bottom-2 right-3 bg-[#00000040] px-2 py-0.5 rounded-full">{getQuadrantTodos(4).length}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🍃</span>
+            <span className="font-semibold">ตัดทิ้ง</span>
+          </div>
+          <div className="flex justify-between items-end">
+            <span className="text-xs text-gray-300">ไม่สำคัญ + ไม่เร่งด่วน</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
+              {getQuadrantTodos(4).length}
+            </span>
+          </div>
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -520,54 +558,67 @@ export default function Todo() {
               const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
               if (input) input.focus();
             }}
-            className="absolute top-2 right-2 w-6 h-6 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-green-400 transition-colors"
+            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-green-500 transition-colors"
             title="เพิ่มรายการใหม่ในหมวดนี้"
           >
-            <span className="text-sm">+</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </button>
         </div>
       </div>
       
       {/* แสดง Form เพิ่ม Todo ง่ายๆ */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2 bg-[#1e1e1e] p-3 rounded-lg shadow">
+      <div className="mb-5">
+        <div className="flex items-center gap-2 bg-[#1e1e1e] p-4 rounded-xl shadow-md border border-[#2d2d2d]">
           <input
             type="text"
             name="todoText"
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
             placeholder="เพิ่มรายการใหม่..."
-            className="flex-1 p-2 rounded-lg bg-[#2d2d2d] border-none outline-none text-white text-sm"
+            className="flex-1 p-3 rounded-lg bg-[#2d2d2d] border border-[#3d3d3d] focus:border-[#ff6100] outline-none text-white text-sm transition-all"
             onKeyDown={(e) => e.key === 'Enter' && (newTodo.trim() !== '' ? setShowAddModal(true) : null)}
           />
           <button
             onClick={() => newTodo.trim() !== '' ? setShowAddModal(true) : null}
-            className="bg-[#ff6100] text-white p-2 rounded-lg flex-shrink-0 w-10 h-10 flex items-center justify-center shadow"
+            className="bg-[#ff6100] text-white p-3 rounded-lg flex-shrink-0 w-12 h-12 flex items-center justify-center shadow-md hover:bg-[#ff7a30] transition-colors"
             title="เพิ่มรายการ"
           >
-            <span className="text-xl">+</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </button>
         </div>
       </div>
         
       {/* แสดงรายการ Todo */}
-      <div className="bg-[#1e1e1e] rounded-lg shadow overflow-hidden">
-        <div className="p-2 flex justify-between items-center border-b border-[#2d2d2d]">
-          <h2 className="text-lg font-bold text-white flex items-center">
-            {activeQuadrant === 1 ? "ทำทันที" : 
-             activeQuadrant === 2 ? "วางแผนทำ" : 
-             activeQuadrant === 3 ? "มอบหมาย" : 
-             activeQuadrant === 4 ? "ตัดทิ้ง" : "รายการทั้งหมด"}
-            <span className="ml-2 text-xs text-gray-400">
-              ({activeQuadrant ? getQuadrantTodos(activeQuadrant).length : todos.length})
-            </span>
-          </h2>
+      <div className="bg-[#1e1e1e] rounded-xl shadow-md overflow-hidden border border-[#2d2d2d] mb-24">
+        <div className="p-4 flex justify-between items-center border-b border-[#2d2d2d]">
+          <div className="flex items-center gap-2">
+            {activeQuadrant === 1 && <span className="text-xl">🔥</span>}
+            {activeQuadrant === 2 && <span className="text-xl">📋</span>}
+            {activeQuadrant === 3 && <span className="text-xl">⏰</span>}
+            {activeQuadrant === 4 && <span className="text-xl">🍃</span>}
+            <h2 className="text-lg font-bold text-white">
+              {activeQuadrant === 1 ? "ทำทันที" : 
+              activeQuadrant === 2 ? "วางแผนทำ" : 
+              activeQuadrant === 3 ? "มอบหมาย" : 
+              activeQuadrant === 4 ? "ตัดทิ้ง" : "รายการทั้งหมด"}
+              <span className="ml-2 text-xs text-gray-400">
+                ({activeQuadrant ? getQuadrantTodos(activeQuadrant).length : todos.length})
+              </span>
+            </h2>
+          </div>
           
           {completedTasks > 0 && (
             <button
               onClick={clearCompleted}
-              className="text-[#ff6100] hover:text-[#ff884d] text-xs bg-[#262626] p-1.5 rounded"
+              className="text-[#ff6100] hover:text-[#ff7a30] text-xs bg-[#262626] px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors hover:bg-[#2d2d2d]"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
               ลบที่เสร็จแล้ว
             </button>
           )}
@@ -576,12 +627,30 @@ export default function Todo() {
         <div className="max-h-[60vh] overflow-y-auto hide-scrollbar p-2">
           {activeQuadrant ? (
             getQuadrantTodos(activeQuadrant).length === 0 ? (
-              <div className="text-center text-gray-400 py-10">
+              <div className="text-center text-gray-400 py-10 flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
                 <p>ไม่มีรายการในหมวดนี้</p>
+                <button 
+                  onClick={() => {
+                    const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
+                    if (input) {
+                      input.focus();
+                      input.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="mt-3 text-[#ff6100] hover:text-[#ff7a30] text-sm flex items-center gap-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  เพิ่มรายการใหม่
+                </button>
               </div>
             ) : (
               sortTodos(getFilteredTodos()).map(todo => (
-                <div key={todo.id} className="animate-fade-in">
+                <div key={todo.id} className="animate-fadeIn">
                   <TodoItem
                     id={todo.id}
                     text={todo.text}
@@ -592,6 +661,9 @@ export default function Todo() {
                     reminderDate={todo.reminderDate}
                     categories={todo.categories}
                     tags={todo.tags}
+                    startTime={todo.startTime}
+                    endTime={todo.endTime}
+                    isAllDay={todo.isAllDay}
                     onToggle={toggleTodo}
                     onDelete={deleteTodo}
                     onEdit={editTodo}
@@ -602,12 +674,31 @@ export default function Todo() {
             )
           ) : (
             todos.length === 0 ? (
-              <div className="text-center text-gray-400 py-10">
-                <p>ไม่มีรายการที่ต้องทำ</p>
+              <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p className="mb-2">ยังไม่มีรายการที่ต้องทำ</p>
+                <p className="text-xs text-gray-500 mb-3">เริ่มเพิ่มรายการแรกของคุณได้เลย</p>
+                <button 
+                  onClick={() => {
+                    const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
+                    if (input) {
+                      input.focus();
+                      input.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="text-[#ff6100] hover:text-[#ff7a30] text-sm flex items-center gap-1 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  เพิ่มรายการแรก
+                </button>
               </div>
             ) : (
               sortTodos(getFilteredTodos()).map(todo => (
-                <div key={todo.id} className="animate-fade-in">
+                <div key={todo.id} className="animate-fadeIn">
                   <TodoItem
                     id={todo.id}
                     text={todo.text}
@@ -618,6 +709,9 @@ export default function Todo() {
                     reminderDate={todo.reminderDate}
                     categories={todo.categories}
                     tags={todo.tags}
+                    startTime={todo.startTime}
+                    endTime={todo.endTime}
+                    isAllDay={todo.isAllDay}
                     onToggle={toggleTodo}
                     onDelete={deleteTodo}
                     onEdit={editTodo}
@@ -643,66 +737,76 @@ export default function Todo() {
             input.scrollIntoView({ behavior: 'smooth' });
           }
         }}
-        className="fixed bottom-4 right-4 w-14 h-14 bg-[#ff6100] text-white text-2xl rounded-full shadow-lg flex items-center justify-center z-10 md:hidden"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-[#ff6100] text-white rounded-full shadow-lg flex items-center justify-center z-10 md:hidden hover:bg-[#ff7a30] transition-colors"
       >
-        +
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
       </button>
       
-      {/* แสดงการตั้งค่าเพิ่มเติมเมื่อกดปุ่ม */}
+      {/* แสดงการตั้งค่าเพิ่มเติมเมื่อกดปุ่ม - Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/80 z-20 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-          <div className="bg-[#1e1e1e] rounded-lg p-4 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-3 text-white">กำหนดค่าเพิ่มเติม</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-20 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
+          <div 
+            className="bg-[#1e1e1e] rounded-xl p-5 w-full max-w-md border border-[#3d3d3d] shadow-xl" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#ff6100]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              เพิ่มรายการใหม่
+            </h3>
             
             <div className="mb-4">
-              <div className="text-sm text-gray-300 mb-2">รายละเอียด:</div>
+              <label className="text-sm font-medium text-gray-300 block mb-2">รายละเอียด</label>
               <input
                 type="text"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
                 placeholder="รายละเอียดงาน..."
-                className="w-full p-2 mb-2 bg-[#2d2d2d] text-white text-sm rounded border-none"
+                className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
                 autoFocus
               />
             </div>
             
             <div className="mb-4">
-              <div className="text-sm text-gray-300 mb-2">ความสำคัญ/เร่งด่วน:</div>
+              <label className="text-sm font-medium text-gray-300 block mb-2">ประเภทงาน</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => { setNewImportance('high'); setNewUrgency('high'); }}
-                  className={`p-2 text-sm rounded-lg ${newImportance === 'high' && newUrgency === 'high' ? 'bg-red-600' : 'bg-[#2d2d2d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'high' ? 'bg-red-500 bg-opacity-30 text-white border border-red-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
                 >
-                  <div className="font-bold">ทำทันที</div>
-                  <div className="text-xs opacity-70">สำคัญ+เร่งด่วน</div>
+                  <span className="text-lg">🔥</span>
+                  <span>ทำทันที</span>
                 </button>
                 <button
                   onClick={() => { setNewImportance('high'); setNewUrgency('low'); }}
-                  className={`p-2 text-sm rounded-lg ${newImportance === 'high' && newUrgency === 'low' ? 'bg-[#ff6100]' : 'bg-[#2d2d2d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'low' ? 'bg-[#ff6100] bg-opacity-30 text-white border border-[#ff6100]' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
                 >
-                  <div className="font-bold">วางแผนทำ</div>
-                  <div className="text-xs opacity-70">สำคัญ+ไม่เร่งด่วน</div>
+                  <span className="text-lg">📋</span>
+                  <span>วางแผนทำ</span>
                 </button>
                 <button
                   onClick={() => { setNewImportance('low'); setNewUrgency('high'); }}
-                  className={`p-2 text-sm rounded-lg ${newImportance === 'low' && newUrgency === 'high' ? 'bg-yellow-500' : 'bg-[#2d2d2d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'high' ? 'bg-yellow-500 bg-opacity-30 text-white border border-yellow-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
                 >
-                  <div className="font-bold">มอบหมาย</div>
-                  <div className="text-xs opacity-70">ไม่สำคัญ+เร่งด่วน</div>
+                  <span className="text-lg">⏰</span>
+                  <span>มอบหมาย</span>
                 </button>
                 <button
                   onClick={() => { setNewImportance('low'); setNewUrgency('low'); }}
-                  className={`p-2 text-sm rounded-lg ${newImportance === 'low' && newUrgency === 'low' ? 'bg-green-500' : 'bg-[#2d2d2d]'}`}
+                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'low' ? 'bg-green-500 bg-opacity-30 text-white border border-green-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
                 >
-                  <div className="font-bold">ตัดทิ้ง</div>
-                  <div className="text-xs opacity-70">ไม่สำคัญ+ไม่เร่งด่วน</div>
+                  <span className="text-lg">🍃</span>
+                  <span>ตัดทิ้ง</span>
                 </button>
               </div>
             </div>
             
             <div className="mb-4">
-              <div className="text-sm text-gray-300 mb-2">หมวดหมู่:</div>
-              <div className="flex flex-wrap gap-1 mb-2">
+              <label className="text-sm font-medium text-gray-300 block mb-2">หมวดหมู่</label>
+              <div className="flex flex-wrap gap-1.5 mb-3">
                 {categories.map((category) => {
                   if (typeof category !== 'string') return null;
                   return (
@@ -713,12 +817,15 @@ export default function Todo() {
                           ? newCategories.filter(c => c !== category)
                           : [...newCategories, category]
                       )}
-                      className={`px-2 py-1 text-xs rounded-full ${
+                      className={`px-3 py-1.5 text-xs rounded-full flex items-center gap-1 transition-colors ${
                         newCategories.includes(category)
                           ? 'bg-[#ff6100] text-white'
-                          : 'bg-[#2d2d2d] text-gray-300'
+                          : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'
                       }`}
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
                       {category}
                     </button>
                   );
@@ -726,43 +833,51 @@ export default function Todo() {
               </div>
             </div>
             
-            <div className="mb-4">
-              <div className="text-sm text-gray-300 mb-2">กำหนดเวลา:</div>
+            <div className="mb-5">
+              <label className="text-sm font-medium text-gray-300 block mb-2">
+                <div className="flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  กำหนดเวลา
+                </div>
+              </label>
               <input 
                 type="datetime-local" 
                 value={newDueDate || ''} 
                 onChange={(e) => setNewDueDate(e.target.value)}
-                className="w-full p-2 mb-2 bg-[#2d2d2d] text-white text-sm rounded-lg border-none"
+                className="w-full p-3 mb-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
               />
               
-              <div className="flex items-center mb-2">
+              <div className="flex items-center mb-3">
                 <input
                   type="checkbox"
+                  id="all-day-new"
                   checked={newIsAllDay}
                   onChange={(e) => setNewIsAllDay(e.target.checked)}
-                  className="mr-2"
+                  className="w-4 h-4 mr-2 accent-[#ff6100]"
                 />
-                <span className="text-sm text-gray-300">ทั้งวัน</span>
+                <label htmlFor="all-day-new" className="text-sm text-gray-300">ทั้งวัน</label>
               </div>
               
               {!newIsAllDay && newDueDate && (
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น:</div>
+                    <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น</div>
                     <input 
                       type="time" 
                       value={newStartTime || ''} 
                       onChange={(e) => setNewStartTime(e.target.value)}
-                      className="w-full p-2 bg-[#2d2d2d] text-white text-sm rounded-lg border-none"
+                      className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
                     />
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด:</div>
+                    <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด</div>
                     <input 
                       type="time" 
                       value={newEndTime || ''} 
                       onChange={(e) => setNewEndTime(e.target.value)}
-                      className="w-full p-2 bg-[#2d2d2d] text-white text-sm rounded-lg border-none"
+                      className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -772,7 +887,7 @@ export default function Todo() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 bg-[#2d2d2d] text-white rounded-lg"
+                className="px-4 py-2.5 bg-[#3d3d3d] text-white rounded-lg hover:bg-[#4d4d4d] transition-colors"
               >
                 ยกเลิก
               </button>
@@ -781,8 +896,11 @@ export default function Todo() {
                   addTodo();
                   setShowAddModal(false);
                 }}
-                className="px-4 py-2 bg-[#ff6100] text-white rounded-lg"
+                className="px-4 py-2.5 bg-[#ff6100] text-white rounded-lg flex items-center gap-1.5 hover:bg-[#ff7a30] transition-colors"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
                 เพิ่มรายการ
               </button>
             </div>
