@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface TodoItemProps {
   id: number;
@@ -11,9 +11,12 @@ interface TodoItemProps {
   quadrant?: number;
   categories: string[];
   tags: string[];
+  startTime?: string;
+  endTime?: string;
+  isAllDay?: boolean;
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
-  onEdit: (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[]) => void;
+  onEdit: (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean) => void;
 }
 
 export default function TodoItem({ 
@@ -27,6 +30,9 @@ export default function TodoItem({
   quadrant = 0,
   categories = [],
   tags = [],
+  startTime,
+  endTime,
+  isAllDay = false,
   onToggle, 
   onDelete, 
   onEdit 
@@ -40,7 +46,27 @@ export default function TodoItem({
   const [editedReminderDate, setEditedReminderDate] = useState<string | undefined>(reminderDate);
   const [editedCategories, setEditedCategories] = useState<string[]>(categories);
   const [editedTags, setEditedTags] = useState<string[]>(tags);
+  const [editedStartTime, setEditedStartTime] = useState<string | undefined>(startTime);
+  const [editedEndTime, setEditedEndTime] = useState<string | undefined>(endTime);
+  const [editedIsAllDay, setEditedIsAllDay] = useState<boolean>(isAllDay);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // ตรวจสอบขนาดหน้าจอเมื่อโหลดครั้งแรกและเมื่อขนาดหน้าจอเปลี่ยนแปลง
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // ตรวจสอบขนาดหน้าจอเมื่อโหลดครั้งแรก
+    checkIfMobile();
+    
+    // ตรวจสอบขนาดหน้าจอเมื่อขนาดหน้าจอเปลี่ยนแปลง
+    window.addEventListener('resize', checkIfMobile);
+    
+    // เก็บกวาดเมื่อ unmount
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
 
   const handleEdit = () => {
     if (editedText.trim() === '') return;
@@ -52,7 +78,10 @@ export default function TodoItem({
       editedDueDate, 
       editedReminderDate,
       editedCategories,
-      editedTags
+      editedTags,
+      editedStartTime,
+      editedEndTime,
+      editedIsAllDay
     );
     setIsEditing(false);
   };
@@ -199,13 +228,48 @@ export default function TodoItem({
         </div>
         
         <div className="mb-2">
+          <div className="text-xs text-gray-400 mb-1">วันที่ครบกำหนด:</div>
           <input 
             type="datetime-local" 
             value={editedDueDate || ''} 
             onChange={(e) => setEditedDueDate(e.target.value)}
             className="w-full p-2 mb-2 bg-[#2d2d2d] text-white text-xs rounded border-none"
-            placeholder="กำหนดส่ง"
           />
+          
+          <div className="flex items-center mb-2">
+            <input
+              type="checkbox"
+              checked={editedIsAllDay}
+              onChange={(e) => setEditedIsAllDay(e.target.checked)}
+              className="mr-2"
+            />
+            <span className="text-xs text-gray-400">ทั้งวัน</span>
+          </div>
+          
+          {!editedIsAllDay && (
+            <>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น:</div>
+                  <input
+                    type="time"
+                    value={editedStartTime || ''}
+                    onChange={(e) => setEditedStartTime(e.target.value)}
+                    className="w-full p-2 bg-[#2d2d2d] text-white text-xs rounded border-none"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด:</div>
+                  <input
+                    type="time"
+                    value={editedEndTime || ''}
+                    onChange={(e) => setEditedEndTime(e.target.value)}
+                    className="w-full p-2 bg-[#2d2d2d] text-white text-xs rounded border-none"
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </div>
         
         <div className="flex gap-2">
@@ -230,7 +294,7 @@ export default function TodoItem({
     <div 
       id={`todo-${id}`}
       className={`p-2 my-2 rounded-lg ${getBorderColor()} ${getBackgroundColor()} transition-all duration-200 border-l-4 ${completed ? 'opacity-70' : 'opacity-100'} ${isOverdue() ? 'border-red-500' : ''}`}
-      onClick={() => setIsExpanded(!isExpanded)}
+      onClick={() => !isMobile && setIsExpanded(!isExpanded)}
     >
       <div className="flex items-center">
         <div className="mr-2" onClick={(e) => { e.stopPropagation(); onToggle(id); }}>
@@ -247,29 +311,14 @@ export default function TodoItem({
             {text}
           </div>
           
-          {/* แสดงเฉพาะส่วนที่สำคัญเมื่อยังไม่ขยาย */}
-          {!isExpanded ? (
-            <div className="flex items-center mt-1">
-              {dueDate && (
-                <span className={`text-xs mr-2 ${isOverdue() ? 'text-red-400' : 'text-gray-400'}`}>
-                  <span className="mr-1">📅</span>
-                  {getTimeRemaining()}
-                </span>
-              )}
-              
-              {categories.length > 0 && (
-                <span className="text-xs text-gray-400">
-                  {categories[0]}{categories.length > 1 ? ` +${categories.length - 1}` : ''}
-                </span>
-              )}
-            </div>
-          ) : (
+          {/* แสดงรายละเอียดทั้งหมดสำหรับมือถือ หรือเมื่อกดขยายบนจอใหญ่ */}
+          {(isMobile || isExpanded) ? (
             <>
-              {/* แสดงรายละเอียดเพิ่มเติมเมื่อกดขยาย */}
               {dueDate && (
                 <div className={`text-xs mt-1 ${isOverdue() ? 'text-red-400' : 'text-gray-400'}`}>
                   <span className="mr-1">📅</span>
-                  {formatDate(dueDate)} ({getTimeRemaining()})
+                  {formatDate(dueDate)} 
+                  {isAllDay ? ' (ทั้งวัน)' : startTime && endTime ? ` (${startTime.substring(0, 5)}-${endTime.substring(0, 5)})` : ` (${getTimeRemaining()})`}
                 </div>
               )}
               
@@ -304,6 +353,21 @@ export default function TodoItem({
                 </div>
               )}
             </>
+          ) : (
+            <div className="flex items-center mt-1">
+              {dueDate && (
+                <span className={`text-xs mr-2 ${isOverdue() ? 'text-red-400' : 'text-gray-400'}`}>
+                  <span className="mr-1">📅</span>
+                  {isAllDay ? 'ทั้งวัน' : getTimeRemaining()}
+                </span>
+              )}
+              
+              {categories.length > 0 && (
+                <span className="text-xs text-gray-400">
+                  {categories[0]}{categories.length > 1 ? ` +${categories.length - 1}` : ''}
+                </span>
+              )}
+            </div>
           )}
         </div>
         
@@ -334,8 +398,8 @@ export default function TodoItem({
         </div>
       </div>
       
-      {/* ปุ่มขยาย/ย่อ */}
-      {(dueDate || categories.length > 0 || tags.length > 0) && !isExpanded && (
+      {/* ปุ่มขยาย/ย่อสำหรับจอใหญ่เท่านั้น (ไม่แสดงบนมือถือ) */}
+      {!isMobile && (dueDate || categories.length > 0 || tags.length > 0) && !isExpanded && (
         <div className="flex justify-center mt-1">
           <button className="text-xs text-gray-400">แสดงเพิ่มเติม</button>
         </div>

@@ -16,6 +16,9 @@ interface Todo {
   reminderDate?: string;
   categories: string[];       // หมวดหมู่ เช่น งานส่วนตัว, งานบ้าน, การเรียน
   tags: string[];             // แท็กผู้ใช้กำหนดเอง
+  startTime?: string;         // เวลาเริ่มต้น
+  endTime?: string;           // เวลาสิ้นสุด
+  isAllDay?: boolean;         // เป็นงานทั้งวันหรือไม่
 }
 
 export default function Todo() {
@@ -27,6 +30,9 @@ export default function Todo() {
   const [newReminderDate, setNewReminderDate] = useState<string | undefined>(undefined);
   const [newCategories, setNewCategories] = useState<string[]>([]);
   const [newTags, setNewTags] = useState<string[]>([]);
+  const [newStartTime, setNewStartTime] = useState<string | undefined>(undefined);
+  const [newEndTime, setNewEndTime] = useState<string | undefined>(undefined);
+  const [newIsAllDay, setNewIsAllDay] = useState<boolean>(false);
   const [categories, setCategories] = useState<string[]>(['งานส่วนตัว', 'งานบ้าน', 'การเรียน', 'งานอื่นๆ']);
   const [tags, setTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
@@ -153,7 +159,10 @@ export default function Todo() {
       dueDate: newDueDate,
       reminderDate: newReminderDate,
       categories: newCategories,
-      tags: newTags
+      tags: newTags,
+      startTime: newStartTime,
+      endTime: newEndTime,
+      isAllDay: newIsAllDay
     };
     
     setTodos([...todos, newItem]);
@@ -162,6 +171,9 @@ export default function Todo() {
     setNewReminderDate(undefined);
     setNewCategories([]);
     setNewTags([]);
+    setNewStartTime(undefined);
+    setNewEndTime(undefined);
+    setNewIsAllDay(false);
     
     // ตั้งค่าการแจ้งเตือนหากมีการกำหนด
     if (newReminderDate && notificationPermission === 'granted') {
@@ -181,7 +193,7 @@ export default function Todo() {
     setTodos(todos.filter(todo => todo.id !== id));
   };
 
-  const editTodo = (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[]) => {
+  const editTodo = (id: number, newText: string, importance?: 'high' | 'low', urgency?: 'high' | 'low', dueDate?: string, reminderDate?: string, categories?: string[], tags?: string[], startTime?: string, endTime?: string, isAllDay?: boolean) => {
     setTodos(
       todos.map(todo => {
         if (todo.id === id) {
@@ -193,7 +205,10 @@ export default function Todo() {
             dueDate: dueDate !== undefined ? dueDate : todo.dueDate,
             reminderDate: reminderDate !== undefined ? reminderDate : todo.reminderDate,
             categories: categories || todo.categories,
-            tags: tags || todo.tags
+            tags: tags || todo.tags,
+            startTime: startTime !== undefined ? startTime : todo.startTime,
+            endTime: endTime !== undefined ? endTime : todo.endTime,
+            isAllDay: isAllDay !== undefined ? isAllDay : todo.isAllDay
           };
           
           // จัดการกับการแจ้งเตือนที่เปลี่ยนแปลง
@@ -292,23 +307,63 @@ export default function Todo() {
       }
     }
     
-    return filteredTodos;
+    // เรียงลำดับรายการตามวันที่ส่งและความสำคัญ
+    return sortTodos(filteredTodos);
+  };
+
+  // ฟังก์ชันเรียงลำดับรายการตามวันที่ส่งและความสำคัญ
+  const sortTodos = (todosList: Todo[]) => {
+    return [...todosList].sort((a, b) => {
+      // เรียงงานที่ยังไม่เสร็จไว้ก่อน
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      
+      // เรียงตามกำหนดส่ง - งานที่มีกำหนดส่งเร็วกว่าจะอยู่ก่อน
+      if (a.dueDate && b.dueDate) {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      } else if (a.dueDate) {
+        return -1; // งานที่มีกำหนดส่งอยู่ก่อนงานที่ไม่มีกำหนดส่ง
+      } else if (b.dueDate) {
+        return 1;
+      }
+      
+      // เรียงตามความสำคัญ (สำคัญมากอยู่ก่อน)
+      if (a.importance !== b.importance) {
+        return a.importance === 'high' ? -1 : 1;
+      }
+      
+      // เรียงตามความเร่งด่วน (เร่งด่วนอยู่ก่อน)
+      if (a.urgency !== b.urgency) {
+        return a.urgency === 'high' ? -1 : 1;
+      }
+      
+      // ถ้าทุกอย่างเท่ากัน ให้เรียงตามเวลาสร้าง (ใหม่สุดอยู่ก่อน)
+      return b.id - a.id;
+    });
   };
 
   // แบ่งงานตาม Eisenhower Matrix
   const getQuadrantTodos = (quadrant: number) => {
+    let quadrantTodos;
     switch(quadrant) {
       case 1: // สำคัญและเร่งด่วน (Urgent & Important)
-        return todos.filter(todo => todo.importance === 'high' && todo.urgency === 'high');
+        quadrantTodos = todos.filter(todo => todo.importance === 'high' && todo.urgency === 'high');
+        break;
       case 2: // สำคัญแต่ไม่เร่งด่วน (Important but Not Urgent)
-        return todos.filter(todo => todo.importance === 'high' && todo.urgency === 'low');
+        quadrantTodos = todos.filter(todo => todo.importance === 'high' && todo.urgency === 'low');
+        break;
       case 3: // เร่งด่วนแต่ไม่สำคัญ (Urgent but Not Important)
-        return todos.filter(todo => todo.importance === 'low' && todo.urgency === 'high');
+        quadrantTodos = todos.filter(todo => todo.importance === 'low' && todo.urgency === 'high');
+        break;
       case 4: // ไม่สำคัญและไม่เร่งด่วน (Not Urgent & Not Important)
-        return todos.filter(todo => todo.importance === 'low' && todo.urgency === 'low');
+        quadrantTodos = todos.filter(todo => todo.importance === 'low' && todo.urgency === 'low');
+        break;
       default:
-        return todos;
+        quadrantTodos = todos;
+        break;
     }
+    return sortTodos(quadrantTodos);
   };
 
   // คัดแยกงานที่เสร็จแล้วและยังไม่เสร็จ
@@ -371,6 +426,16 @@ export default function Todo() {
       
       {/* Component สำหรับการจัดการการแจ้งเตือน */}
       <NotificationManager onPermissionChange={handlePermissionChange} />
+      
+      {/* ปุ่มไปยังหน้า Calendar View */}
+      <div className="mb-4 flex justify-end">
+        <a href="/calendar" className="flex items-center gap-1 bg-[#2d2d2d] text-white px-3 py-1.5 rounded-lg text-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span>ปฏิทิน</span>
+        </a>
+      </div>
       
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div
@@ -515,7 +580,7 @@ export default function Todo() {
                 <p>ไม่มีรายการในหมวดนี้</p>
               </div>
             ) : (
-              getFilteredTodos().map(todo => (
+              sortTodos(getFilteredTodos()).map(todo => (
                 <div key={todo.id} className="animate-fade-in">
                   <TodoItem
                     id={todo.id}
@@ -541,7 +606,7 @@ export default function Todo() {
                 <p>ไม่มีรายการที่ต้องทำ</p>
               </div>
             ) : (
-              todos.map(todo => (
+              sortTodos(getFilteredTodos()).map(todo => (
                 <div key={todo.id} className="animate-fade-in">
                   <TodoItem
                     id={todo.id}
@@ -669,6 +734,39 @@ export default function Todo() {
                 onChange={(e) => setNewDueDate(e.target.value)}
                 className="w-full p-2 mb-2 bg-[#2d2d2d] text-white text-sm rounded-lg border-none"
               />
+              
+              <div className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  checked={newIsAllDay}
+                  onChange={(e) => setNewIsAllDay(e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-300">ทั้งวัน</span>
+              </div>
+              
+              {!newIsAllDay && newDueDate && (
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น:</div>
+                    <input 
+                      type="time" 
+                      value={newStartTime || ''} 
+                      onChange={(e) => setNewStartTime(e.target.value)}
+                      className="w-full p-2 bg-[#2d2d2d] text-white text-sm rounded-lg border-none"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด:</div>
+                    <input 
+                      type="time" 
+                      value={newEndTime || ''} 
+                      onChange={(e) => setNewEndTime(e.target.value)}
+                      className="w-full p-2 bg-[#2d2d2d] text-white text-sm rounded-lg border-none"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-end gap-2">
