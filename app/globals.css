@@ -225,9 +225,9 @@ input[type="time"] {
 }
 
 @keyframes glow {
-  0% { box-shadow: 0 0 5px rgba(255, 97, 0, 0); }
-  50% { box-shadow: 0 0 15px rgba(255, 97, 0, 0.5), 0 0 30px rgba(255, 97, 0, 0.2); }
-  100% { box-shadow: 0 0 5px rgba(255, 97, 0, 0); }
+  0% { box-shadow: 0 0 5px rgba(255, 97, 0, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(255, 97, 0, 0.6); }
+  100% { box-shadow: 0 0 5px rgba(255, 97, 0, 0.3); }
 }
 
 .hover-glow:hover {
@@ -368,4 +368,479 @@ select:focus {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
+}
+
+/* เพิ่ม Animation และ Effects สำหรับลูกเล่นต่างๆ */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 97, 0, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 97, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 97, 0, 0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e1e1e;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d3d3d;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6100;
+}
+
+/* Todo App Enhanced Styles */
+.todo-app {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.shiny-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shiny-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 2s infinite;
+  transform: rotate(30deg);
+  pointer-events: none;
+}
+
+.floating-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* ปรับปรุงรูปแบบการ์ด */
+.app-card {
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #2a2a2a;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-card:hover {
+  border-color: rgba(255, 97, 0, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* ปรับปรุงปุ่ม */
+button {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+/* ปรับปรุงไอคอน */
+.icon-bounce:hover {
+  animation: float 1s ease infinite;
+}
+
+/* Glass Morphism Effect */
+.glass-effect {
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Checkbox */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.2em;
+  height: 1.2em;
+  border-radius: 0.25em;
+  margin-right: 0.5em;
+  border: 1px solid #3d3d3d;
+  background-color: #1e1e1e;
+  display: grid;
+  place-content: center;
+  transition: all 0.2s ease;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 0.65em;
+  height: 0.65em;
+  transform: scale(0);
+  transition: transform 0.2s ease-in-out;
+  box-shadow: inset 1em 1em #ff6100;
+  transform-origin: center;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+input[type="checkbox"]:checked {
+  background-color: #1e1e1e;
+  border-color: #ff6100;
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+input[type="checkbox"]:focus {
+  outline: 2px solid rgba(255, 97, 0, 0.5);
+  outline-offset: 2px;
+}
+
+/* Cool focus effects */
+input:focus, button:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 97, 0, 0.5);
+}
+
+/* เพิ่ม Animation และ Effects สำหรับลูกเล่นเพิ่มเติม */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes scale-bounce {
+  0% { transform: scale(1); }
+  70% { transform: scale(1.07); }
+  100% { transform: scale(1); } 
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* เพิ่ม CSS classes สำหรับ Effects ใหม่ */
+.gradient-text {
+  background: linear-gradient(to right, #ff6100, #ff9a00);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+.gradient-border {
+  position: relative;
+  border: 1px solid transparent;
+  background: linear-gradient(#1e1e1e, #1e1e1e) padding-box,
+              linear-gradient(to right, #ff6100, #ff9a00) border-box;
+  border-radius: 12px;
+}
+
+.glow-effect {
+  animation: glow 3s infinite ease-in-out;
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #ff6100, #ff9a00, #ffb700, #ff6100);
+  background-size: 300% 300%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.glassmorphism {
+  background: rgba(30, 30, 30, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.popup-effect {
+  animation: scale-bounce 0.3s forwards;
+}
+
+.rotate-animation {
+  animation: rotate-slow 20s linear infinite;
+}
+
+.slide-up-animation {
+  animation: slide-up 0.5s forwards ease-out;
+}
+
+/* ปรับปรุง Todo Card */
+.todo-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.todo-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.todo-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom, 
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.todo-card:hover::after {
+  opacity: 1;
+}
+
+/* ปรับแต่ง Button styles */
+.button-3d {
+  transition: all 0.2s;
+  transform-style: preserve-3d;
+  transform: perspective(100px) translateZ(0);
+}
+
+.button-3d:hover {
+  transform: perspective(100px) translateZ(5px);
+}
+
+.button-3d:active {
+  transform: perspective(100px) translateZ(2px);
+}
+
+/* Confetti effect container */
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Custom Colored Checkbox */
+.checkbox-custom {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #1e1e1e;
+  border: 2px solid #3d3d3d;
+  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkbox-custom:checked {
+  background-color: #ff6100;
+  border-color: #ff6100;
+}
+
+.checkbox-custom:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 14px;
+  color: white;
+  transform: translate(-50%, -50%);
+}
+
+.checkbox-custom:hover:not(:checked) {
+  border-color: #ff6100;
+}
+
+/* Modern badges */
+.badge-modern {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 97, 0, 0.15);
+  color: #ff7a30;
+  border: 1px solid rgba(255, 97, 0, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.badge-modern:hover {
+  background: rgba(255, 97, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Modern buttons */
+.btn-modern {
+  background: linear-gradient(to right, #ff6100, #ff7a30);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(255, 97, 0, 0.3);
+}
+
+.btn-modern:hover {
+  box-shadow: 0 6px 15px rgba(255, 97, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-modern:active {
+  box-shadow: 0 2px 5px rgba(255, 97, 0, 0.2);
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: rgba(61, 61, 61, 0.8);
+  color: #e5e5e5;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(61, 61, 61, 1);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ไอคอนเมนู */
+.icon-menu {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  background: linear-gradient(145deg, #1a1a1a, #222);
+  box-shadow: 4px 4px 8px #141414, -4px -4px 8px #2a2a2a;
+}
+
+.icon-menu:hover {
+  box-shadow: 6px 6px 12px #121212, -6px -6px 12px #2c2c2c;
+  transform: scale(1.1);
+}
+
+.icon-menu:active {
+  box-shadow: inset 4px 4px 8px #141414, inset -4px -4px 8px #2a2a2a;
+  transform: scale(0.95);
+}
+
+/* Text gradient */
+.text-gradient {
+  background-image: linear-gradient(to right, #ff6100, #ff8a00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+/* Glass card */
+.glass-card {
+  background: rgba(26, 26, 26, 0.7);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 97, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Typing indicator animation */
+@keyframes typing {
+  0% { width: 0 }
+  50% { width: 100% }
+  100% { width: 0 }
+}
+
+.typing-indicator {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.typing-indicator::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 70%;
+  background-color: currentColor;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }

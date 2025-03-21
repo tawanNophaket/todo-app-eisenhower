@@ -52,6 +52,12 @@ export default function TodoItem({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // กำหนดสถานะของงานตามความสำคัญและความเร่งด่วน
+  const isImportantUrgent = importance === 'high' && urgency === 'high';
+  const isImportantNotUrgent = importance === 'high' && urgency === 'low';
+  const isNotImportantUrgent = importance === 'low' && urgency === 'high';
+  const isNotImportantNotUrgent = importance === 'low' && urgency === 'low';
+
   // ตรวจสอบขนาดหน้าจอเมื่อโหลดครั้งแรกและเมื่อขนาดหน้าจอเปลี่ยนแปลง
   useEffect(() => {
     const checkIfMobile = () => {
@@ -346,87 +352,164 @@ export default function TodoItem({
 
   return (
     <div 
-      id={`todo-${id}`}
-      className={`relative w-full mb-3 p-3 rounded-lg border-l-4 ${getBorderColor()} transition-all shadow-md ${getBackgroundColor()} ${completed ? 'opacity-70' : 'hover:bg-[#222]'}`}
+      className={`group relative p-3 mb-3 rounded-xl border cursor-pointer overflow-hidden animate-fadeIn transition-all duration-200 ${
+        isExpanded ? 'bg-[#1a1a1a] border-[#3d3d3d]' : 'bg-[#1e1e1e] border-[#2a2a2a] hover:bg-[#1a1a1a]'
+      } ${completed ? 'opacity-60' : 'hover:border-[#ff6100]/30'} ${
+        isImportantUrgent ? 'border-l-4 border-l-red-500' : 
+        isImportantNotUrgent ? 'border-l-4 border-l-[#ff6100]' : 
+        isNotImportantUrgent ? 'border-l-4 border-l-yellow-500' : 
+        'border-l-4 border-l-green-500'
+      } todo-card shiny-effect`}
+      onClick={() => !isEditing && setIsExpanded(!isExpanded)}
     >
-      <div className="flex justify-between items-start gap-3">
-        <div className="flex items-start flex-1 gap-3 min-w-0">
-          <div className="pt-0.5">
-            <input
-              type="checkbox"
-              checked={completed}
-              onChange={() => onToggle(id)}
-              className="w-5 h-5 rounded-full bg-[#2d2d2d] border-[#3d3d3d] checked:bg-[#ff6100] checked:border-[#ff6100] focus:ring-0 focus:ring-offset-0 cursor-pointer transition-colors"
-            />
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className={`flex flex-col ${completed ? 'line-through text-gray-500' : ''}`}>
-              <p className="text-sm font-medium break-words">{text}</p>
-            </div>
-            
-            <div className="flex flex-wrap mt-2 gap-2">
-              {importance && urgency && (
-                <div className={`rounded-full px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${completed ? 'bg-[#2a2a2a] text-gray-400' : `bg-gradient-to-r ${quadrantInfo.gradient} text-white`}`}>
-                  <span className="text-base">{getQuadrantIcon()}</span>
-                  <span>{quadrantInfo.name}</span>
-                </div>
-              )}
-              
-              {timeRemaining && (
-                <div className={`bg-[#2a2a2a] rounded-full px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${getTimeRemainingColor()}`}>
-                  <span className="text-base">⏱️</span>
-                  <span>{timeRemaining.text}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex flex-wrap mt-2 gap-2">
-              {dueDate && (
-                <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
-                  <span className="text-base">📅</span>
-                  <span>{formatDate(dueDate)}</span>
-                </div>
-              )}
-              
-              {categories.length > 0 && (
-                <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
-                  <span className="text-base">📂</span>
-                  <span>{categories.join(', ')}</span>
-                </div>
-              )}
-              
-              {tags.length > 0 && (
-                <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
-                  <span className="text-base">#</span>
-                  <span>{tags.join(', ')}</span>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Top Badge - Quadrant indicator */}
+      <div className="absolute top-0 right-0 px-2 py-0.5 text-xs font-medium rounded-bl-md glassmorphism">
+        {isImportantUrgent && <span className="flex items-center text-red-500">🔥 Q1</span>}
+        {isImportantNotUrgent && <span className="flex items-center text-[#ff6100]">📋 Q2</span>}
+        {isNotImportantUrgent && <span className="flex items-center text-yellow-500">⏰ Q3</span>}
+        {isNotImportantNotUrgent && <span className="flex items-center text-green-500">🍃 Q4</span>}
+      </div>
+
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={completed}
+            onChange={() => onToggle(id)}
+            className="checkbox-custom"
+          />
         </div>
-        
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-xs p-2 bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d] rounded-lg transition-colors flex items-center justify-center"
-            title="แก้ไข"
-          >
-            <span className="text-base">✏️</span>
-          </button>
-          <button
-            onClick={handleDelete}
-            className={`text-xs p-2 ${isDeleting ? 'bg-red-600 text-white' : 'bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d]'} rounded-lg transition-colors flex items-center justify-center`}
-            title={isDeleting ? 'ยืนยันการลบ' : 'ลบ'}
-          >
-            <span className="text-base">{isDeleting ? '✓' : '🗑️'}</span>
-          </button>
+
+        <div className="flex-1">
+          {isEditing ? (
+            <div>
+              <div className="flex items-center mb-1 group">
+                <h3 
+                  className={`flex-1 text-sm font-medium mr-2 group-hover:text-[#ff6100] transition-colors ${
+                    completed ? 'line-through text-gray-400' : 'text-white'
+                  }`}
+                >
+                  {text}
+                </h3>
+                <div className="flex items-center gap-1">
+                  {dueDate && (
+                    <div className="flex items-center gap-1 text-xs text-gray-400 badge-modern">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 icon-bounce">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                      </svg>
+                      {new Date(dueDate).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div 
+                    className="icon-menu p-1.5 rounded-full hover:bg-[#252525] cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsExpanded(true);
+                      setIsEditing(true);
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-[#ff6100] transition-colors icon-bounce">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    </svg>
+                  </div>
+                  <div 
+                    className="icon-menu p-1.5 rounded-full hover:bg-[#252525] cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(id);
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-red-500 transition-colors icon-bounce">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              {!isExpanded && (categories.length > 0 || tags.length > 0) && (
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  {categories.map((category) => (
+                    <span key={category} className="badge-modern hover:bg-[#ff6100]/10 hover:text-[#ff6100] transition-colors">
+                      {category}
+                    </span>
+                  ))}
+                  
+                  {tags.map((tag) => (
+                    <span key={tag} className="badge-modern !bg-[#202020] text-gray-400 hover:bg-[#ff6100]/10 hover:text-[#ff6100] transition-colors">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center mb-1 group">
+                <h3 
+                  className={`flex-1 text-sm font-medium mr-2 group-hover:text-[#ff6100] transition-colors ${
+                    completed ? 'line-through text-gray-400' : isExpanded ? 'text-white' : 'text-gradient'
+                  }`}
+                >
+                  {text}
+                </h3>
+                <div className="flex items-center gap-1">
+                  {dueDate && (
+                    <div className="flex items-center gap-1 text-xs text-gray-400 badge-modern">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 icon-bounce">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                      </svg>
+                      {new Date(dueDate).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div 
+                    className="icon-menu"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsExpanded(true);
+                      setIsEditing(true);
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-[#ff6100] transition-colors icon-bounce">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    </svg>
+                  </div>
+                  <div 
+                    className="icon-menu"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(id);
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-400 hover:text-red-500 transition-colors icon-bounce">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              {!isExpanded && (categories.length > 0 || tags.length > 0) && (
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap slide-up-animation">
+                  {categories.map((category) => (
+                    <span key={category} className="badge-modern">
+                      {category}
+                    </span>
+                  ))}
+                  
+                  {tags.map((tag) => (
+                    <span key={tag} className="badge-modern !bg-[#202020] text-gray-400">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       
       {timeRemaining && (timeRemaining.status === 'overdue' || timeRemaining.status === 'urgent' || timeRemaining.status === 'soon') && (
         <div className="mt-2 pt-2 border-t border-[#3d3d3d]">
-          <div className={`text-sm font-medium flex items-center gap-2 ${getTimeRemainingColor()}`}>
+          <div className={`text-sm font-medium flex items-center gap-2 ${getTimeRemainingColor()} popup-effect`}>
             <span className="text-lg">{timeRemaining.status === 'overdue' ? '⚠️' : '⏰'}</span>
             <span>
               {timeRemaining.status === 'overdue' ? 
@@ -434,6 +517,82 @@ export default function TodoItem({
                 `เหลือเวลาอีก ${timeRemaining.value} ${timeRemaining.unit === 'minute' ? 'นาที' : timeRemaining.unit === 'hour' ? 'ชั่วโมง' : 'วัน'}`
               }
             </span>
+          </div>
+        </div>
+      )}
+      
+      {isExpanded && !isEditing && (
+        <div className="mt-4 border-t border-[#3d3d3d] pt-4 slide-up-animation">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-xs text-gray-400 mb-1.5">หมวดหมู่</div>
+              <div className="flex flex-wrap gap-1.5">
+                {categories.length > 0 ? categories.map((category) => (
+                  <span key={category} className="badge-modern">
+                    {category}
+                  </span>
+                )) : (
+                  <span className="text-xs text-gray-500">ไม่มีหมวดหมู่</span>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <div className="text-xs text-gray-400 mb-1.5">แท็ก</div>
+              <div className="flex flex-wrap gap-1.5">
+                {tags.length > 0 ? tags.map((tag) => (
+                  <span key={tag} className="badge-modern !bg-[#202020] text-gray-400">
+                    #{tag}
+                  </span>
+                )) : (
+                  <span className="text-xs text-gray-500">ไม่มีแท็ก</span>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {dueDate && (
+            <div className="mt-3">
+              <div className="text-xs text-gray-400 mb-1.5">กำหนดเวลา</div>
+              <div className="flex items-center gap-2 text-sm text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[#ff6100]">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                </svg>
+                <span>
+                  {new Date(dueDate).toLocaleString('th-TH', {
+                    dateStyle: 'full',
+                    timeStyle: 'short'
+                  })}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
+              className="btn-modern text-sm py-2 px-4 flex-1 flex items-center justify-center gap-1.5"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+              </svg>
+              แก้ไข
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(id);
+              }}
+              className="btn-secondary text-sm py-2 px-4 flex items-center justify-center gap-1.5"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+              </svg>
+              ลบ
+            </button>
           </div>
         </div>
       )}
