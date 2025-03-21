@@ -48,6 +48,8 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#ff6100" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        {/* Google Font Icons */}
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0..200&display=swap" rel="stylesheet" />
         <style>
           {`
             :root {
@@ -113,6 +115,80 @@ export default function RootLayout({
               margin: 0 auto;
               padding: 0 var(--gutter);
             }
+            
+            /* Material Icons */
+            .material-symbols-rounded {
+              font-variation-settings:
+              'FILL' 1,
+              'wght' 400,
+              'GRAD' 0,
+              'opsz' 24;
+              vertical-align: middle;
+            }
+
+            /* อนิเมชั่น */
+            @keyframes shimmer {
+              0% { background-position: -200% 0; }
+              100% { background-position: 200% 0; }
+            }
+            
+            @keyframes floating {
+              0% { transform: translateY(0px); }
+              50% { transform: translateY(-15px); }
+              100% { transform: translateY(0px); }
+            }
+            
+            @keyframes floating-reverse {
+              0% { transform: translateY(0px); }
+              50% { transform: translateY(15px); }
+              100% { transform: translateY(0px); }
+            }
+            
+            @keyframes scale-up {
+              0% { transform: scale(0.95); opacity: 0.5; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            
+            @keyframes slide-up {
+              0% { transform: translateY(10px); opacity: 0; }
+              100% { transform: translateY(0); opacity: 1; }
+            }
+            
+            @keyframes slide-down {
+              0% { transform: translateY(-10px); opacity: 0; }
+              100% { transform: translateY(0); opacity: 1; }
+            }
+
+            /* คลาสอนิเมชั่น */
+            .animate-shimmer {
+              background: linear-gradient(90deg, 
+                rgba(255,97,0,0.1), 
+                rgba(255,97,0,0.3), 
+                rgba(255,97,0,0.1)
+              );
+              background-size: 200% 100%;
+              animation: shimmer 2s infinite;
+            }
+            
+            .animate-floating {
+              animation: floating 6s ease-in-out infinite;
+            }
+            
+            .animate-floating-reverse {
+              animation: floating-reverse 7s ease-in-out infinite;
+            }
+            
+            .animate-scale-up {
+              animation: scale-up 0.3s ease forwards;
+            }
+            
+            .animate-slide-up {
+              animation: slide-up 0.4s ease forwards;
+            }
+            
+            .animate-slide-down {
+              animation: slide-down 0.4s ease forwards;
+            }
 
             /* เลย์เอาท์การ์ด */
             .app-card {
@@ -121,10 +197,34 @@ export default function RootLayout({
               box-shadow: var(--shadow-md);
               transition: all var(--transition-normal);
               border: 1px solid var(--border-color);
+              backdrop-filter: blur(10px);
+              position: relative;
+              overflow: hidden;
             }
             
             .app-card:hover {
               box-shadow: var(--shadow-lg);
+            }
+            
+            .app-card::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: -150%;
+              width: 40%;
+              height: 100%;
+              background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.05),
+                transparent
+              );
+              transform: skewX(-25deg);
+              transition: 0.75s;
+            }
+            
+            .app-card:hover::before {
+              left: 150%;
             }
             
             /* พื้นที่ส่วนหัวการ์ด */
@@ -147,6 +247,37 @@ export default function RootLayout({
               font-weight: 500;
               transition: all var(--transition-fast);
               cursor: pointer;
+              position: relative;
+              overflow: hidden;
+            }
+            
+            .app-button::after {
+              content: '';
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              width: 5px;
+              height: 5px;
+              background: rgba(255, 255, 255, 0.4);
+              opacity: 0;
+              border-radius: 100%;
+              transform: scale(1, 1) translate(-50%);
+              transform-origin: 50% 50%;
+            }
+            
+            .app-button:active::after {
+              animation: ripple 0.6s ease-out;
+            }
+            
+            @keyframes ripple {
+              0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+              }
+              100% {
+                transform: scale(20, 20);
+                opacity: 0;
+              }
             }
 
             .app-button-primary {
@@ -157,6 +288,11 @@ export default function RootLayout({
             .app-button-primary:hover {
               background-color: var(--primary-hover);
               transform: translateY(-2px);
+              box-shadow: 0 5px 15px rgba(255, 97, 0, 0.2);
+            }
+            
+            .app-button-primary:active {
+              transform: translateY(0);
             }
 
             .app-button-secondary {
@@ -168,6 +304,49 @@ export default function RootLayout({
               background-color: var(--border-color-light);
               color: var(--text-primary);
               transform: translateY(-2px);
+            }
+            
+            /* Add Button Animation */
+            .add-button {
+              width: 56px;
+              height: 56px;
+              border-radius: 50%;
+              background-color: var(--primary-color);
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              position: fixed;
+              bottom: 24px;
+              right: 24px;
+              box-shadow: 0 4px 10px rgba(255, 97, 0, 0.3);
+              transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+              z-index: 100;
+            }
+            
+            .add-button:hover {
+              transform: scale(1.1);
+              box-shadow: 0 6px 15px rgba(255, 97, 0, 0.4);
+            }
+            
+            .add-button:active {
+              transform: scale(0.95);
+            }
+            
+            .add-button-pulse {
+              animation: pulse 2s infinite;
+            }
+            
+            @keyframes pulse {
+              0% {
+                box-shadow: 0 0 0 0 rgba(255, 97, 0, 0.7);
+              }
+              70% {
+                box-shadow: 0 0 0 15px rgba(255, 97, 0, 0);
+              }
+              100% {
+                box-shadow: 0 0 0 0 rgba(255, 97, 0, 0);
+              }
             }
             
             /* แท็กและรายการ */
@@ -218,6 +397,14 @@ export default function RootLayout({
               box-shadow: var(--shadow-lg);
             }
             
+            /* Glass Effect */
+            .glass-effect {
+              background: rgba(26, 26, 26, 0.7);
+              backdrop-filter: blur(10px);
+              -webkit-backdrop-filter: blur(10px);
+              border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            
             /* ระดับความสำคัญ */
             .priority-1 { background-color: var(--priority-1); color: white; }
             .priority-2 { background-color: var(--priority-2); color: white; }
@@ -247,6 +434,71 @@ export default function RootLayout({
               font-weight: 600;
               border-left: 4px solid var(--primary-color);
               padding-left: 12px;
+            }
+            
+            /* Modal Animation */
+            .modal-overlay {
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-color: rgba(0, 0, 0, 0.5);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              z-index: 1000;
+              backdrop-filter: blur(5px);
+              animation: fadeIn 0.3s ease;
+            }
+            
+            .modal-content {
+              width: 90%;
+              max-width: 500px;
+              background-color: var(--card-bg);
+              border-radius: var(--border-radius-md);
+              padding: 20px;
+              position: relative;
+              animation: scaleIn 0.3s ease;
+              border: 1px solid var(--border-color);
+              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            }
+            
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            
+            @keyframes scaleIn {
+              from { transform: scale(0.9); opacity: 0; }
+              to { transform: scale(1); opacity: 1; }
+            }
+            
+            /* Todo Item Effects */
+            .todo-item {
+              position: relative;
+              transition: all 0.3s ease;
+              overflow: hidden;
+            }
+            
+            .todo-item::after {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 2px;
+              background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 97, 0, 0.2), 
+                transparent
+              );
+              transform: translateX(-100%);
+              transition: transform 0.6s ease;
+            }
+            
+            .todo-item:hover::after {
+              transform: translateX(100%);
             }
           `}
         </style>

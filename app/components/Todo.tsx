@@ -417,496 +417,273 @@ export default function Todo() {
     setNotificationPermission(permission);
   };
 
-  // ส่วนแสดงผลหลัก
-  return (
-    <div className="w-full max-w-lg mx-auto px-3 min-h-screen pb-20 bg-[#121212]">
-      <div className="mb-4 pt-3">
-        <Header />
-      </div>
-      
-      {/* Component สำหรับการจัดการการแจ้งเตือน */}
-      <NotificationManager onPermissionChange={handlePermissionChange} />
-      
-      {/* ปุ่มไปยังหน้า Calendar View */}
-      <div className="mb-4 flex justify-end">
-        <a 
-          href="/calendar" 
-          className="flex items-center gap-1 bg-[#2d2d2d] text-white px-3.5 py-2 rounded-full text-sm hover:bg-[#3d3d3d] transition-all duration-200 shadow-md"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span>ปฏิทินงาน</span>
-        </a>
-      </div>
-      
-      {/* การ์ดแสดงหมวดหมู่ */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div
-          onClick={() => setActiveQuadrant(activeQuadrant === 1 ? null : 1)}
-          className={`p-4 rounded-xl text-sm ${activeQuadrant === 1 ? 'bg-red-500 bg-opacity-20 border border-red-500' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-red-500 relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🔥</span>
-            <span className="font-semibold">ทำทันที</span>
-          </div>
-          <div className="flex justify-between items-end">
-            <span className="text-xs text-gray-300">สำคัญ + เร่งด่วน</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
-              {getQuadrantTodos(1).length}
-            </span>
-          </div>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setNewImportance('high');
-              setNewUrgency('high');
-              setActiveQuadrant(1);
-              const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
-              if (input) input.focus();
-            }}
-            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
-            title="เพิ่มรายการใหม่ในหมวดนี้"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-        <div
-          onClick={() => setActiveQuadrant(activeQuadrant === 2 ? null : 2)}
-          className={`p-4 rounded-xl text-sm ${activeQuadrant === 2 ? 'bg-[#ff6100] bg-opacity-20 border border-[#ff6100]' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-[#ff6100] relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📋</span>
-            <span className="font-semibold">วางแผนทำ</span>
-          </div>
-          <div className="flex justify-between items-end">
-            <span className="text-xs text-gray-300">สำคัญ + ไม่เร่งด่วน</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
-              {getQuadrantTodos(2).length}
-            </span>
-          </div>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setNewImportance('high');
-              setNewUrgency('low');
-              setActiveQuadrant(2);
-              const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
-              if (input) input.focus();
-            }}
-            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-[#ff6100] transition-colors"
-            title="เพิ่มรายการใหม่ในหมวดนี้"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-        <div
-          onClick={() => setActiveQuadrant(activeQuadrant === 3 ? null : 3)}
-          className={`p-4 rounded-xl text-sm ${activeQuadrant === 3 ? 'bg-yellow-500 bg-opacity-20 border border-yellow-500' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-yellow-500 relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⏰</span>
-            <span className="font-semibold">มอบหมาย</span>
-          </div>
-          <div className="flex justify-between items-end">
-            <span className="text-xs text-gray-300">ไม่สำคัญ + เร่งด่วน</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
-              {getQuadrantTodos(3).length}
-            </span>
-          </div>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setNewImportance('low');
-              setNewUrgency('high');
-              setActiveQuadrant(3);
-              const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
-              if (input) input.focus();
-            }}
-            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-yellow-500 transition-colors"
-            title="เพิ่มรายการใหม่ในหมวดนี้"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-        <div
-          onClick={() => setActiveQuadrant(activeQuadrant === 4 ? null : 4)}
-          className={`p-4 rounded-xl text-sm ${activeQuadrant === 4 ? 'bg-green-500 bg-opacity-20 border border-green-500' : 'bg-[#1e1e1e] border border-[#2d2d2d]'} hover:border-green-500 relative transition-all duration-200 h-24 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🍃</span>
-            <span className="font-semibold">ตัดทิ้ง</span>
-          </div>
-          <div className="flex justify-between items-end">
-            <span className="text-xs text-gray-300">ไม่สำคัญ + ไม่เร่งด่วน</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00000040] backdrop-blur-sm">
-              {getQuadrantTodos(4).length}
-            </span>
-          </div>
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setNewImportance('low');
-              setNewUrgency('low');
-              setActiveQuadrant(4);
-              const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
-              if (input) input.focus();
-            }}
-            className="absolute top-2 right-2 w-7 h-7 bg-[#00000040] rounded-full flex items-center justify-center hover:bg-green-500 transition-colors"
-            title="เพิ่มรายการใหม่ในหมวดนี้"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      
-      {/* แสดง Form เพิ่ม Todo ง่ายๆ */}
-      <div className="mb-5">
-        <div className="flex items-center gap-2 bg-[#1e1e1e] p-4 rounded-xl shadow-md border border-[#2d2d2d]">
-          <input
-            type="text"
-            name="todoText"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            placeholder="เพิ่มรายการใหม่..."
-            className="flex-1 p-3 rounded-lg bg-[#2d2d2d] border border-[#3d3d3d] focus:border-[#ff6100] outline-none text-white text-sm transition-all"
-            onKeyDown={(e) => e.key === 'Enter' && (newTodo.trim() !== '' ? setShowAddModal(true) : null)}
-          />
-          <button
-            onClick={() => newTodo.trim() !== '' ? setShowAddModal(true) : null}
-            className="bg-[#ff6100] text-white p-3 rounded-lg flex-shrink-0 w-12 h-12 flex items-center justify-center shadow-md hover:bg-[#ff7a30] transition-colors"
-            title="เพิ่มรายการ"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-      </div>
-        
-      {/* แสดงรายการ Todo */}
-      <div className="bg-[#1e1e1e] rounded-xl shadow-md overflow-hidden border border-[#2d2d2d] mb-24">
-        <div className="p-4 flex justify-between items-center border-b border-[#2d2d2d]">
-          <div className="flex items-center gap-2">
-            {activeQuadrant === 1 && <span className="text-xl">🔥</span>}
-            {activeQuadrant === 2 && <span className="text-xl">📋</span>}
-            {activeQuadrant === 3 && <span className="text-xl">⏰</span>}
-            {activeQuadrant === 4 && <span className="text-xl">🍃</span>}
-            <h2 className="text-lg font-bold text-white">
-              {activeQuadrant === 1 ? "ทำทันที" : 
-              activeQuadrant === 2 ? "วางแผนทำ" : 
-              activeQuadrant === 3 ? "มอบหมาย" : 
-              activeQuadrant === 4 ? "ตัดทิ้ง" : "รายการทั้งหมด"}
-              <span className="ml-2 text-xs text-gray-400">
-                ({activeQuadrant ? getQuadrantTodos(activeQuadrant).length : todos.length})
-              </span>
+  // เพิ่มฟังก์ชันเปิดโมดัลเพิ่มรายการใหม่
+  const openAddModal = () => {
+    setShowAddModal(true);
+  };
+
+  // ฟังก์ชันสำหรับปิดโมดัล
+  const closeAddModal = () => {
+    setShowAddModal(false);
+  };
+
+  // UI ส่วนแสดงรายการกลุ่มงาน (สำหรับหน้าจอใหญ่)
+  const renderTaskByCategory = () => {
+    const completedTasks = todos.filter(todo => todo.completed);
+    const uncompletedTasks = getFilteredTodos().filter(todo => !todo.completed);
+    
+    return (
+      <div className="animate-fade-in">
+        {uncompletedTasks.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 text-gradient flex items-center gap-2">
+              <span className="material-symbols-rounded text-[var(--primary-color)]">task_alt</span>
+              รายการที่ต้องทำ ({uncompletedTasks.length})
             </h2>
+            <div className="space-y-3">
+              {uncompletedTasks.map(todo => (
+                <TodoItem
+                  key={todo.id}
+                  {...todo}
+                  onToggle={toggleTodo}
+                  onDelete={deleteTodo}
+                  onEdit={editTodo}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {completedTasks.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-gray-400 flex items-center gap-2">
+              <span className="material-symbols-rounded">check_circle</span>
+              เสร็จสิ้นแล้ว ({completedTasks.length})
+            </h2>
+            <div className="space-y-3">
+              {completedTasks.map(todo => (
+                <TodoItem
+                  key={todo.id}
+                  {...todo}
+                  onToggle={toggleTodo}
+                  onDelete={deleteTodo}
+                  onEdit={editTodo}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // โมดัลสำหรับเพิ่มรายการใหม่
+  const renderAddTaskModal = () => {
+    if (!showAddModal) return null;
+    
+    return (
+      <div className="modal-overlay" onClick={closeAddModal}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">เพิ่มรายการใหม่</h3>
+            <button 
+              onClick={closeAddModal}
+              className="p-1 text-gray-400 hover:text-white transition-colors"
+            >
+              <span className="material-symbols-rounded">close</span>
+            </button>
           </div>
           
-          {completedTasks > 0 && (
-            <button
-              onClick={clearCompleted}
-              className="text-[#ff6100] hover:text-[#ff7a30] text-xs bg-[#262626] px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors hover:bg-[#2d2d2d]"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              ลบที่เสร็จแล้ว
-            </button>
-          )}
-        </div>
-        
-        <div className="max-h-[60vh] overflow-y-auto hide-scrollbar p-2">
-          {activeQuadrant ? (
-            getQuadrantTodos(activeQuadrant).length === 0 ? (
-              <div className="text-center text-gray-400 py-10 flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p>ไม่มีรายการในหมวดนี้</p>
-                <button 
-                  onClick={() => {
-                    const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
-                    if (input) {
-                      input.focus();
-                      input.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="mt-3 text-[#ff6100] hover:text-[#ff7a30] text-sm flex items-center gap-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  เพิ่มรายการใหม่
-                </button>
-              </div>
-            ) : (
-              sortTodos(getFilteredTodos()).map(todo => (
-                <div key={todo.id} className="animate-fadeIn">
-                  <TodoItem
-                    id={todo.id}
-                    text={todo.text}
-                    completed={todo.completed}
-                    importance={todo.importance}
-                    urgency={todo.urgency}
-                    dueDate={todo.dueDate}
-                    reminderDate={todo.reminderDate}
-                    categories={todo.categories}
-                    tags={todo.tags}
-                    startTime={todo.startTime}
-                    endTime={todo.endTime}
-                    isAllDay={todo.isAllDay}
-                    onToggle={toggleTodo}
-                    onDelete={deleteTodo}
-                    onEdit={editTodo}
-                    quadrant={activeQuadrant}
-                  />
-                </div>
-              ))
-            )
-          ) : (
-            todos.length === 0 ? (
-              <div className="text-center text-gray-400 py-12 flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p className="mb-2">ยังไม่มีรายการที่ต้องทำ</p>
-                <p className="text-xs text-gray-500 mb-3">เริ่มเพิ่มรายการแรกของคุณได้เลย</p>
-                <button 
-                  onClick={() => {
-                    const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
-                    if (input) {
-                      input.focus();
-                      input.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="text-[#ff6100] hover:text-[#ff7a30] text-sm flex items-center gap-1 transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  เพิ่มรายการแรก
-                </button>
-              </div>
-            ) : (
-              sortTodos(getFilteredTodos()).map(todo => (
-                <div key={todo.id} className="animate-fadeIn">
-                  <TodoItem
-                    id={todo.id}
-                    text={todo.text}
-                    completed={todo.completed}
-                    importance={todo.importance}
-                    urgency={todo.urgency}
-                    dueDate={todo.dueDate}
-                    reminderDate={todo.reminderDate}
-                    categories={todo.categories}
-                    tags={todo.tags}
-                    startTime={todo.startTime}
-                    endTime={todo.endTime}
-                    isAllDay={todo.isAllDay}
-                    onToggle={toggleTodo}
-                    onDelete={deleteTodo}
-                    onEdit={editTodo}
-                    quadrant={
-                      todo.importance === 'high' && todo.urgency === 'high' ? 1 :
-                      todo.importance === 'high' && todo.urgency === 'low' ? 2 :
-                      todo.importance === 'low' && todo.urgency === 'high' ? 3 : 4
-                    }
-                  />
-                </div>
-              ))
-            )
-          )}
-        </div>
-      </div>
-      
-      {/* ปุ่มเพิ่มรายการลอยด้านล่าง */}
-      <button 
-        onClick={() => {
-          const input = document.querySelector('input[name="todoText"]') as HTMLInputElement;
-          if (input) {
-            input.focus();
-            input.scrollIntoView({ behavior: 'smooth' });
-          }
-        }}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-[#ff6100] text-white rounded-full shadow-lg flex items-center justify-center z-10 md:hidden hover:bg-[#ff7a30] transition-colors"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
-      
-      {/* แสดงการตั้งค่าเพิ่มเติมเมื่อกดปุ่ม - Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-20 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-          <div 
-            className="bg-[#1e1e1e] rounded-xl p-5 w-full max-w-md border border-[#3d3d3d] shadow-xl" 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#ff6100]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              เพิ่มรายการใหม่
-            </h3>
-            
-            <div className="mb-4">
-              <label className="text-sm font-medium text-gray-300 block mb-2">รายละเอียด</label>
-              <input
-                type="text"
-                value={newTodo}
-                onChange={(e) => setNewTodo(e.target.value)}
-                placeholder="รายละเอียดงาน..."
-                className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
-                autoFocus
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="text-sm font-medium text-gray-300 block mb-2">ประเภทงาน</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => { setNewImportance('high'); setNewUrgency('high'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'high' ? 'bg-red-500 bg-opacity-30 text-white border border-red-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
-                >
-                  <span className="text-lg">🔥</span>
-                  <span>ทำทันที</span>
-                </button>
-                <button
-                  onClick={() => { setNewImportance('high'); setNewUrgency('low'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'high' && newUrgency === 'low' ? 'bg-[#ff6100] bg-opacity-30 text-white border border-[#ff6100]' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
-                >
-                  <span className="text-lg">📋</span>
-                  <span>วางแผนทำ</span>
-                </button>
-                <button
-                  onClick={() => { setNewImportance('low'); setNewUrgency('high'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'high' ? 'bg-yellow-500 bg-opacity-30 text-white border border-yellow-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
-                >
-                  <span className="text-lg">⏰</span>
-                  <span>มอบหมาย</span>
-                </button>
-                <button
-                  onClick={() => { setNewImportance('low'); setNewUrgency('low'); }}
-                  className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-1.5 transition-colors ${newImportance === 'low' && newUrgency === 'low' ? 'bg-green-500 bg-opacity-30 text-white border border-green-500' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
-                >
-                  <span className="text-lg">🍃</span>
-                  <span>ตัดทิ้ง</span>
-                </button>
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <label className="text-sm font-medium text-gray-300 block mb-2">หมวดหมู่</label>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {categories.map((category) => {
-                  if (typeof category !== 'string') return null;
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => setNewCategories(
-                        newCategories.includes(category)
-                          ? newCategories.filter(c => c !== category)
-                          : [...newCategories, category]
-                      )}
-                      className={`px-3 py-1.5 text-xs rounded-full flex items-center gap-1 transition-colors ${
-                        newCategories.includes(category)
-                          ? 'bg-[#ff6100] text-white'
-                          : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'
-                      }`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
-                      {category}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            
-            <div className="mb-5">
-              <label className="text-sm font-medium text-gray-300 block mb-2">
-                <div className="flex items-center gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  กำหนดเวลา
-                </div>
-              </label>
-              <input 
-                type="datetime-local" 
-                value={newDueDate || ''} 
-                onChange={(e) => setNewDueDate(e.target.value)}
-                className="w-full p-3 mb-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
-              />
-              
-              <div className="flex items-center mb-3">
-                <input
-                  type="checkbox"
-                  id="all-day-new"
-                  checked={newIsAllDay}
-                  onChange={(e) => setNewIsAllDay(e.target.checked)}
-                  className="w-4 h-4 mr-2 accent-[#ff6100]"
-                />
-                <label htmlFor="all-day-new" className="text-sm text-gray-300">ทั้งวัน</label>
-              </div>
-              
-              {!newIsAllDay && newDueDate && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น</div>
-                    <input 
-                      type="time" 
-                      value={newStartTime || ''} 
-                      onChange={(e) => setNewStartTime(e.target.value)}
-                      className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด</div>
-                    <input 
-                      type="time" 
-                      value={newEndTime || ''} 
-                      onChange={(e) => setNewEndTime(e.target.value)}
-                      className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end gap-2">
+          <div className="mb-4">
+            <input
+              type="text"
+              value={newTodo}
+              onChange={(e) => setNewTodo(e.target.value)}
+              placeholder="เพิ่มรายการใหม่..."
+              className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+              autoFocus
+            />
+          </div>
+          
+          <div className="mb-4">
+            <div className="text-sm font-medium text-gray-300 mb-2">ประเภทงาน</div>
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2.5 bg-[#3d3d3d] text-white rounded-lg hover:bg-[#4d4d4d] transition-colors"
+                onClick={() => { setNewImportance('high'); setNewUrgency('high'); }}
+                className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${newImportance === 'high' && newUrgency === 'high' ? 'bg-gradient-to-br from-red-500 to-red-700 text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
               >
-                ยกเลิก
+                <span className="material-symbols-rounded">priority_high</span>
+                <span>ทำทันที</span>
               </button>
               <button
-                onClick={() => {
-                  addTodo();
-                  setShowAddModal(false);
-                }}
-                className="px-4 py-2.5 bg-[#ff6100] text-white rounded-lg flex items-center gap-1.5 hover:bg-[#ff7a30] transition-colors"
+                onClick={() => { setNewImportance('high'); setNewUrgency('low'); }}
+                className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${newImportance === 'high' && newUrgency === 'low' ? 'bg-gradient-to-br from-[#ff6100] to-[#cc4d00] text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                เพิ่มรายการ
+                <span className="material-symbols-rounded">event_note</span>
+                <span>วางแผนทำ</span>
+              </button>
+              <button
+                onClick={() => { setNewImportance('low'); setNewUrgency('high'); }}
+                className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${newImportance === 'low' && newUrgency === 'high' ? 'bg-gradient-to-br from-yellow-500 to-yellow-700 text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+              >
+                <span className="material-symbols-rounded">schedule</span>
+                <span>มอบหมาย</span>
+              </button>
+              <button
+                onClick={() => { setNewImportance('low'); setNewUrgency('low'); }}
+                className={`p-2.5 text-sm rounded-lg flex items-center justify-center gap-2 transition-colors ${newImportance === 'low' && newUrgency === 'low' ? 'bg-gradient-to-br from-green-500 to-green-700 text-white' : 'bg-[#2d2d2d] text-gray-300 border border-[#3d3d3d]'}`}
+              >
+                <span className="material-symbols-rounded">spa</span>
+                <span>ตัดทิ้ง</span>
               </button>
             </div>
           </div>
+          
+          <div className="mb-4">
+            <div className="text-sm font-medium text-gray-300 mb-2">วันที่และเวลา</div>
+            <input 
+              type="datetime-local" 
+              value={newDueDate || ''} 
+              onChange={(e) => setNewDueDate(e.target.value)}
+              className="w-full p-3 mb-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+            />
+            
+            <div className="flex items-center mb-3">
+              <input
+                type="checkbox"
+                id="all-day-new"
+                checked={newIsAllDay}
+                onChange={(e) => setNewIsAllDay(e.target.checked)}
+                className="w-4 h-4 mr-2 accent-[#ff6100]"
+              />
+              <label htmlFor="all-day-new" className="text-sm text-gray-300">ทั้งวัน</label>
+            </div>
+            
+            {!newIsAllDay && (
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">เวลาเริ่มต้น</div>
+                  <input
+                    type="time"
+                    value={newStartTime || ''}
+                    onChange={(e) => setNewStartTime(e.target.value)}
+                    className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">เวลาสิ้นสุด</div>
+                  <input
+                    type="time"
+                    value={newEndTime || ''}
+                    onChange={(e) => setNewEndTime(e.target.value)}
+                    className="w-full p-3 bg-[#2d2d2d] text-white text-sm rounded-lg border border-[#3d3d3d] focus:border-[#ff6100] focus:ring-1 focus:ring-[#ff6100] outline-none transition-all"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <button
+            onClick={() => {
+              addTodo();
+              closeAddModal();
+            }}
+            disabled={newTodo.trim() === ''}
+            className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 flex justify-center items-center gap-2 ${
+              newTodo.trim() === '' 
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-[#ff6100] to-[#ff7c33] text-white hover:shadow-lg hover:shadow-[#ff610033] active:scale-95'
+            }`}
+          >
+            <span className="material-symbols-rounded">add_task</span>
+            เพิ่มรายการ
+          </button>
         </div>
-      )}
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[200px]">
+        <div className="w-12 h-12 border-4 border-t-[#ff6100] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-400">กำลังโหลดรายการ...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pb-24">
+      {/* การ์ด UI หลัก */}
+      <div className="app-card p-6 mb-8 animate-scale-up glass-effect">
+        {/* ส่วนข้อมูลเมตริก */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-[#1e1e1e] rounded-lg p-4 flex flex-col items-center text-center border border-[#333] hover-lift">
+            <span className="material-symbols-rounded text-white text-3xl mb-2">pending_actions</span>
+            <div className="text-2xl font-bold">{todos.filter(todo => !todo.completed).length}</div>
+            <div className="text-xs text-gray-400">รอดำเนินการ</div>
+          </div>
+          <div className="bg-[#1e1e1e] rounded-lg p-4 flex flex-col items-center text-center border border-[#333] hover-lift">
+            <span className="material-symbols-rounded text-green-500 text-3xl mb-2">task_alt</span>
+            <div className="text-2xl font-bold">{todos.filter(todo => todo.completed).length}</div>
+            <div className="text-xs text-gray-400">เสร็จสิ้น</div>
+          </div>
+          <div className="bg-[#1e1e1e] rounded-lg p-4 flex flex-col items-center text-center border border-[#333] hover-lift">
+            <span className="material-symbols-rounded text-red-500 text-3xl mb-2">running_with_errors</span>
+            <div className="text-2xl font-bold">
+              {todos.filter(todo => {
+                if (!todo.dueDate || todo.completed) return false;
+                return new Date(todo.dueDate) < new Date();
+              }).length}
+            </div>
+            <div className="text-xs text-gray-400">เลยกำหนด</div>
+          </div>
+          <div className="bg-[#1e1e1e] rounded-lg p-4 flex flex-col items-center text-center border border-[#333] hover-lift">
+            <span className="material-symbols-rounded text-[#ff6100] text-3xl mb-2">today</span>
+            <div className="text-2xl font-bold">
+              {todos.filter(todo => {
+                if (!todo.dueDate || todo.completed) return false;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const dueDate = new Date(todo.dueDate);
+                return dueDate >= today && dueDate < tomorrow;
+              }).length}
+            </div>
+            <div className="text-xs text-gray-400">วันนี้</div>
+          </div>
+        </div>
+      
+        {renderTaskByCategory()}
+        
+        {todos.length === 0 && (
+          <div className="text-center py-10">
+            <div className="material-symbols-rounded text-5xl text-gray-600 mb-4">task</div>
+            <h3 className="text-xl font-semibold mb-2">ยังไม่มีรายการ</h3>
+            <p className="text-gray-400 mb-4">เพิ่มรายการแรกของคุณเพื่อเริ่มจัดการงาน</p>
+            <button
+              onClick={openAddModal}
+              className="app-button app-button-primary mx-auto"
+            >
+              <span className="material-symbols-rounded mr-2">add</span>
+              เพิ่มรายการใหม่
+            </button>
+          </div>
+        )}
+      </div>
+      
+      {/* ปุ่มเพิ่มรายการแบบลอย */}
+      <button
+        onClick={openAddModal}
+        className="add-button add-button-pulse"
+        aria-label="เพิ่มรายการใหม่"
+      >
+        <span className="material-symbols-rounded">add</span>
+      </button>
+      
+      {/* Modal เพิ่มรายการใหม่ */}
+      {renderAddTaskModal()}
     </div>
   );
 } 

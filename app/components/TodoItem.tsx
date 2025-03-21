@@ -114,10 +114,10 @@ export default function TodoItem({
 
   // สัญลักษณ์ที่แสดงในแต่ละประเภทงาน
   const getQuadrantIcon = () => {
-    if (quadrant === 1) return '🔥';
-    if (quadrant === 2) return '📋';
-    if (quadrant === 3) return '⏰';
-    if (quadrant === 4) return '🍃';
+    if (quadrant === 1) return 'priority_high';
+    if (quadrant === 2) return 'event_note';
+    if (quadrant === 3) return 'schedule';
+    if (quadrant === 4) return 'spa';
     return '';
   };
 
@@ -347,7 +347,7 @@ export default function TodoItem({
   return (
     <div 
       id={`todo-${id}`}
-      className={`relative w-full mb-3 p-3 rounded-lg border-l-4 ${getBorderColor()} transition-all shadow-md ${getBackgroundColor()} ${completed ? 'opacity-70' : 'hover:bg-[#222]'}`}
+      className={`relative w-full mb-3 p-3 rounded-lg border-l-4 ${getBorderColor()} transition-all shadow-md ${getBackgroundColor()} ${completed ? 'opacity-70' : 'hover:bg-[#222]'} todo-item hover-lift`}
     >
       <div className="flex justify-between items-start gap-3">
         <div className="flex items-start flex-1 gap-3 min-w-0">
@@ -368,14 +368,14 @@ export default function TodoItem({
             <div className="flex flex-wrap mt-2 gap-2">
               {importance && urgency && (
                 <div className={`rounded-full px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${completed ? 'bg-[#2a2a2a] text-gray-400' : `bg-gradient-to-r ${quadrantInfo.gradient} text-white`}`}>
-                  <span className="text-base">{getQuadrantIcon()}</span>
+                  <span className="material-symbols-rounded text-sm">{getQuadrantIcon()}</span>
                   <span>{quadrantInfo.name}</span>
                 </div>
               )}
               
               {timeRemaining && (
                 <div className={`bg-[#2a2a2a] rounded-full px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${getTimeRemainingColor()}`}>
-                  <span className="text-base">⏱️</span>
+                  <span className="material-symbols-rounded text-sm">timer</span>
                   <span>{timeRemaining.text}</span>
                 </div>
               )}
@@ -384,21 +384,21 @@ export default function TodoItem({
             <div className="flex flex-wrap mt-2 gap-2">
               {dueDate && (
                 <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
-                  <span className="text-base">📅</span>
+                  <span className="material-symbols-rounded text-sm">calendar_today</span>
                   <span>{formatDate(dueDate)}</span>
                 </div>
               )}
               
               {categories.length > 0 && (
                 <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
-                  <span className="text-base">📂</span>
+                  <span className="material-symbols-rounded text-sm">folder</span>
                   <span>{categories.join(', ')}</span>
                 </div>
               )}
               
               {tags.length > 0 && (
                 <div className="bg-[#2a2a2a] rounded-full px-3 py-1 text-xs flex items-center gap-1.5 text-gray-300">
-                  <span className="text-base">#</span>
+                  <span className="material-symbols-rounded text-sm">tag</span>
                   <span>{tags.join(', ')}</span>
                 </div>
               )}
@@ -409,17 +409,17 @@ export default function TodoItem({
         <div className="flex flex-col gap-2">
           <button
             onClick={() => setIsEditing(true)}
-            className="text-xs p-2 bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d] rounded-lg transition-colors flex items-center justify-center"
+            className="text-xs p-2 bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d] hover:text-white rounded-lg transition-colors flex items-center justify-center"
             title="แก้ไข"
           >
-            <span className="text-base">✏️</span>
+            <span className="material-symbols-rounded">edit</span>
           </button>
           <button
             onClick={handleDelete}
-            className={`text-xs p-2 ${isDeleting ? 'bg-red-600 text-white' : 'bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d]'} rounded-lg transition-colors flex items-center justify-center`}
+            className={`text-xs p-2 ${isDeleting ? 'bg-red-600 text-white' : 'bg-[#2d2d2d] text-gray-300 hover:bg-[#3d3d3d] hover:text-white'} rounded-lg transition-colors flex items-center justify-center`}
             title={isDeleting ? 'ยืนยันการลบ' : 'ลบ'}
           >
-            <span className="text-base">{isDeleting ? '✓' : '🗑️'}</span>
+            <span className="material-symbols-rounded">{isDeleting ? 'check' : 'delete'}</span>
           </button>
         </div>
       </div>
@@ -427,7 +427,9 @@ export default function TodoItem({
       {timeRemaining && (timeRemaining.status === 'overdue' || timeRemaining.status === 'urgent' || timeRemaining.status === 'soon') && (
         <div className="mt-2 pt-2 border-t border-[#3d3d3d]">
           <div className={`text-sm font-medium flex items-center gap-2 ${getTimeRemainingColor()}`}>
-            <span className="text-lg">{timeRemaining.status === 'overdue' ? '⚠️' : '⏰'}</span>
+            <span className="material-symbols-rounded">
+              {timeRemaining.status === 'overdue' ? 'warning' : 'alarm'}
+            </span>
             <span>
               {timeRemaining.status === 'overdue' ? 
                 `เลยกำหนดมาแล้ว ${Math.ceil(timeRemaining.diff || 0)} วัน` :
