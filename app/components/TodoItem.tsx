@@ -227,13 +227,14 @@ export default function TodoItem({
 
   // คำนวณเวลาที่เหลือ
   const getTimeRemaining = () => {
-    if (!dueDate) return null;
+    if (!dueDate) return '';
     
     const now = new Date();
     const due = new Date(dueDate);
     
     if (due < now && !completed) {
-      return { text: 'เลยกำหนดแล้ว', status: 'overdue', diff: (now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24) };
+      const diffDays = Math.round((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+      return `เลยกำหนดแล้ว ${diffDays} วัน`;
     }
     
     const diffTime = due.getTime() - now.getTime();
@@ -243,15 +244,15 @@ export default function TodoItem({
       const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
       if (diffHours === 0) {
         const diffMinutes = Math.floor(diffTime / (1000 * 60));
-        return { text: `อีก ${diffMinutes} นาที`, status: 'urgent', value: diffMinutes, unit: 'minute' };
+        return `อีก ${diffMinutes} นาที`;
       }
-      return { text: `อีก ${diffHours} ชั่วโมง`, status: 'soon', value: diffHours, unit: 'hour' };
+      return `อีก ${diffHours} ชั่วโมง`;
     } else if (diffDays === 1) {
-      return { text: 'พรุ่งนี้', status: 'tomorrow', value: 1, unit: 'day' };
+      return 'พรุ่งนี้';
     } else if (diffDays <= 3) {
-      return { text: `อีก ${diffDays} วัน`, status: 'upcoming', value: diffDays, unit: 'day' };
+      return `อีก ${diffDays} วัน`;
     } else {
-      return { text: `อีก ${diffDays} วัน`, status: 'future', value: diffDays, unit: 'day' };
+      return `อีก ${diffDays} วัน`;
     }
   };
 
@@ -274,27 +275,32 @@ export default function TodoItem({
   };
 
   const quadrantInfo = getQuadrantInfo();
-  const timeRemaining = dueDate ? getTimeRemaining() : null;
+  const timeRemaining = dueDate ? getTimeRemaining() : '';
 
   // ฟังก์ชั่นเพื่อกำหนดสีของเวลาที่เหลือตามความเร่งด่วน
   const getTimeRemainingColor = () => {
-    if (!timeRemaining) return '';
+    if (!dueDate) return '';
     
-    switch (timeRemaining.status) {
-      case 'overdue':
-        return 'text-red-500 font-semibold';
-      case 'urgent':
-        return 'text-red-400 font-semibold';
-      case 'soon':
-        return 'text-yellow-500 font-semibold';
-      case 'tomorrow':
-        return 'text-amber-400 font-semibold';
-      case 'upcoming':
-        return 'text-blue-400 font-semibold';
-      case 'future':
-        return 'text-gray-400 font-semibold';
-      default:
-        return 'text-gray-400';
+    const now = new Date();
+    const due = new Date(dueDate);
+    
+    if (due < now && !completed) {
+      return 'text-red-500';
+    }
+    
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      if (diffHours === 0) {
+        return 'text-red-500';
+      }
+      return 'text-amber-500';
+    } else if (diffDays <= 3) {
+      return 'text-amber-400';
+    } else {
+      return 'text-green-400';
     }
   };
 
