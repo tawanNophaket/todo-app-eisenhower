@@ -458,7 +458,7 @@ export default function Todo() {
             categoryTimes[category] = 0;
           }
           // กระจายเวลาตามจำนวนหมวดหมู่
-          categoryTimes[category] += todo.timeSpent / todo.categories.length;
+          categoryTimes[category] += (todo.timeSpent || 0) / todo.categories.length;
         });
       }
     });
