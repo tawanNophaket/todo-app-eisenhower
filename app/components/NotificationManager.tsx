@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import {
   isNotificationSupported,
   registerServiceWorker,
-  requestNotificationPermission
+  requestNotificationPermission,
+  testNotification
 } from '../utils/notificationManager';
 
 interface NotificationManagerProps {
@@ -16,6 +17,8 @@ export default function NotificationManager({ onPermissionChange }: Notification
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [showPrompt, setShowPrompt] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
+  const [showTestButton, setShowTestButton] = useState(false);
 
   // ตรวจสอบสถานะการสนับสนุน Notification API และสิทธิ์
   useEffect(() => {
@@ -35,6 +38,9 @@ export default function NotificationManager({ onPermissionChange }: Notification
             setShowPrompt(true);
             setIsAnimating(true);
           }, 3000);
+        } else if (Notification.permission === 'granted') {
+          // แสดงปุ่มทดสอบถ้ามีสิทธิ์แล้ว
+          setShowTestButton(true);
         }
 
         // ลงทะเบียน Service Worker
@@ -48,6 +54,11 @@ export default function NotificationManager({ onPermissionChange }: Notification
     if (onPermissionChange) {
       onPermissionChange(notificationPermission);
     }
+    
+    // แสดงปุ่มทดสอบถ้ามีสิทธิ์แล้ว
+    if (notificationPermission === 'granted') {
+      setShowTestButton(true);
+    }
   }, [notificationPermission, onPermissionChange]);
 
   // ขอสิทธิ์การแจ้งเตือน
@@ -59,6 +70,13 @@ export default function NotificationManager({ onPermissionChange }: Notification
       const permission = await requestNotificationPermission();
       setNotificationPermission(permission);
       setShowPrompt(false);
+      
+      if (permission === 'granted') {
+        setShowTestButton(true);
+        
+        // แสดงการทดสอบอัตโนมัติเมื่อได้รับสิทธิ์
+        handleTestNotification();
+      }
     }, 300);
   };
 
@@ -71,9 +89,47 @@ export default function NotificationManager({ onPermissionChange }: Notification
       setShowPrompt(false);
     }, 300);
   };
+  
+  // ทดสอบการแจ้งเตือน
+  const handleTestNotification = async () => {
+    const result = await testNotification();
+    setTestResult(result);
+    
+    // ซ่อนผลลัพธ์หลังจาก 5 วินาที
+    setTimeout(() => {
+      setTestResult(null);
+    }, 5000);
+  };
 
-  // ถ้าเบราว์เซอร์ไม่รองรับ หรือไม่ต้องการแสดงการแจ้งเตือนให้ขอสิทธิ์ ให้ไม่แสดงอะไรเลย
-  if (!notificationSupported || !showPrompt) {
+  // ถ้าเบราว์เซอร์ไม่รองรับ ให้ไม่แสดงอะไรเลย
+  if (!notificationSupported) {
+    return null;
+  }
+  
+  // แสดงปุ่มทดสอบเมื่อมีสิทธิ์แล้ว
+  if (showTestButton && !showPrompt) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        {testResult && (
+          <div className={`mb-3 p-3 rounded-lg text-sm ${testResult.success ? 'bg-green-800/80' : 'bg-red-800/80'} text-white shadow-lg max-w-xs animate-fadeIn`}>
+            {testResult.message}
+          </div>
+        )}
+        <button 
+          onClick={handleTestNotification}
+          className="p-3 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-all duration-200"
+          title="ทดสอบการแจ้งเตือน"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  // ถ้าไม่ต้องการแสดงการแจ้งเตือนให้ขอสิทธิ์ ให้ไม่แสดงอะไรเลย
+  if (!showPrompt) {
     return null;
   }
 

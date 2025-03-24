@@ -152,4 +152,77 @@ export const cancelAllNotifications = async (): Promise<boolean> => {
     console.error('Error canceling notifications:', error);
     return false;
   }
+};
+
+// ฟังก์ชันสำหรับทดสอบการแจ้งเตือน
+export const testNotification = async (): Promise<{success: boolean, message: string}> => {
+  // 1. ตรวจสอบการรองรับการแจ้งเตือน
+  if (!isNotificationSupported()) {
+    return {
+      success: false,
+      message: 'เบราว์เซอร์ของคุณไม่รองรับการแจ้งเตือน'
+    };
+  }
+
+  // 2. ตรวจสอบสิทธิ์การแจ้งเตือน
+  if (Notification.permission !== 'granted') {
+    // ทำการขอสิทธิ์
+    const permission = await requestNotificationPermission();
+    if (permission !== 'granted') {
+      return {
+        success: false,
+        message: 'ไม่ได้รับสิทธิ์ในการแจ้งเตือน โปรดอนุญาตในการตั้งค่าเบราว์เซอร์'
+      };
+    }
+  }
+
+  // 3. ตรวจสอบว่า Service Worker ลงทะเบียนแล้วหรือไม่
+  try {
+    let registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) {
+      registration = await registerServiceWorker();
+      if (!registration) {
+        return {
+          success: false,
+          message: 'ไม่สามารถลงทะเบียน Service Worker ได้'
+        };
+      }
+    }
+
+    // 4. ทดสอบส่งการแจ้งเตือนทันที
+    const result = await showNotification(
+      'ทดสอบการแจ้งเตือน',
+      'หากคุณเห็นข้อความนี้ แสดงว่าการแจ้งเตือนทำงานได้อย่างถูกต้อง',
+      {
+        vibrate: [200, 100, 200],
+        tag: 'test-notification',
+        renotify: true,
+        requireInteraction: true,
+        actions: [
+          {
+            action: 'test',
+            title: 'ทดสอบสำเร็จ'
+          }
+        ]
+      }
+    );
+
+    if (result) {
+      return {
+        success: true,
+        message: 'ส่งการแจ้งเตือนทดสอบสำเร็จ โปรดตรวจสอบการแจ้งเตือนในอุปกรณ์ของคุณ'
+      };
+    } else {
+      return {
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการส่งการแจ้งเตือน'
+      };
+    }
+  } catch (error) {
+    console.error('Error during notification test:', error);
+    return {
+      success: false,
+      message: `เกิดข้อผิดพลาด: ${error.message || 'ไม่ทราบสาเหตุ'}`
+    };
+  }
 }; 
